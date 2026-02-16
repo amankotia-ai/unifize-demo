@@ -4,6 +4,7 @@ import LogoMarquee from "@/components/sections/LogoMarquee";
 import WhyUnifizeSection from "@/components/sections/WhyUnifizeSection";
 import ProductsSection from "@/components/sections/ProductsSection";
 import BenefitsTabsSection from "@/components/sections/BenefitsTabsSection";
+import CustomerTestimonialsSection from "@/components/sections/CustomerTestimonialsSection";
 import Footer from "@/components/sections/Footer";
 
 function App() {
@@ -33,9 +34,14 @@ function App() {
             <ProductsSection />
           </div>
 
-          <div className="section-frame-block section-frame-block-last">
+          <div className="section-frame-block">
             <span aria-hidden className="section-frame-divider" />
             <BenefitsTabsSection />
+          </div>
+
+          <div className="section-frame-block section-frame-block-last">
+            <span aria-hidden className="section-frame-divider" />
+            <CustomerTestimonialsSection />
             <span aria-hidden className="section-frame-bottom-dots" />
           </div>
         </div>
