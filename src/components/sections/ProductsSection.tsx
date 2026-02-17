@@ -135,25 +135,25 @@ const productCards: ProductCard[] = [
 
 const productThemes: Record<ProductKey, ProductTheme> = {
     dms: {
-        outerBorder: "border-slate-100",
+        outerBorder: "border-slate-200/70",
         innerBorder: "border-[#FFF1E4]",
         statusBg: "bg-[#FFF1E6]",
         statusText: "text-[#A8540B]",
     },
     qms: {
-        outerBorder: "border-slate-100",
+        outerBorder: "border-slate-200/70",
         innerBorder: "border-[#FFF4CF]",
         statusBg: "bg-[#FFF7D6]",
         statusText: "text-[#8A7000]",
     },
     plm: {
-        outerBorder: "border-slate-100",
+        outerBorder: "border-slate-200/70",
         innerBorder: "border-[#F4EDFC]",
         statusBg: "bg-[#F1EAF8]",
         statusText: "text-[#6A4E8D]",
     },
     mes: {
-        outerBorder: "border-slate-100",
+        outerBorder: "border-slate-200/70",
         innerBorder: "border-[#E5F6DF]",
         statusBg: "bg-[#ECF9E8]",
         statusText: "text-[#237E16]",
@@ -247,7 +247,8 @@ function PreviewShell({ card, theme, children }: { card: ProductCard; theme: Pro
         <div className="h-full p-1.5 lg:p-2">
             <div
                 className={cn(
-                    "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-dashed p-2.5",
+                    "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border p-2.5",
+                    card.key === "dms" ? "shadow-none" : "shadow-[0_14px_34px_-22px_rgba(15,23,42,0.35)]",
                     card.preview,
                     theme.innerBorder,
                 )}
@@ -259,7 +260,7 @@ function PreviewShell({ card, theme, children }: { card: ProductCard; theme: Pro
 }
 
 function PreviewDivider({ theme }: { theme: ProductTheme }) {
-    return <div className={cn("my-3 border-t border-dashed", theme.innerBorder)} />;
+    return <div className={cn("my-3.5 border-t border-dashed", theme.innerBorder)} />;
 }
 
 function WideInfoRow({
@@ -301,47 +302,44 @@ function ProductPreview({ card }: { card: ProductCard }) {
     const theme = productThemes[card.key];
 
     if (card.key === "dms") {
+        const dmsItems = [
+            { reportId: "Inspection Report #07", title: "Draft Revision", status: "In Progress" },
+            { reportId: "Inspection Report #08", title: "Pending Approval", status: "Under Review" },
+        ] as const;
+
         return (
-            <PreviewShell card={card} theme={theme}>
-                <div className="flex items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-slate-700">
-                        <ArrowLeft className="size-3 text-[#EA7432]" aria-hidden="true" />
-                        <span className="truncate">Processes</span>
-                        <span>/</span>
-                        <span className="truncate text-slate-600">Produce Specs</span>
-                    </div>
-                    <button
-                        type="button"
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#EA7432] px-2 py-1 text-[10px] font-medium text-white"
-                    >
-                        <SquarePen className="size-2.5" aria-hidden="true" />
-                        Edit
-                    </button>
-                </div>
+            <div className="flex h-full flex-col gap-3 p-1.5 lg:p-2">
+                {dmsItems.map((item) => (
+                    <div key={item.reportId} className={cn("min-w-0 rounded-2xl border p-2.5", card.preview, theme.innerBorder)}>
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-slate-700">
+                                <ArrowLeft className="size-3 text-[#EA7432]" aria-hidden="true" />
+                                <span className="truncate">Processes</span>
+                                <span>/</span>
+                                <span className="truncate text-slate-600">Produce Specs</span>
+                            </div>
+                            <button
+                                type="button"
+                                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#EA7432] px-2 py-1 text-[10px] font-medium text-white"
+                            >
+                                <SquarePen className="size-2.5" aria-hidden="true" />
+                                Edit
+                            </button>
+                        </div>
 
-                <div className="mt-2.5 min-w-0">
-                    <span className={cn("inline-flex rounded-sm px-2 py-1 text-[10px] font-medium", theme.statusBg, theme.statusText)}>
-                        Inspection Report #07
-                    </span>
-                    <h4 className="mt-2 truncate text-[13px] font-semibold leading-tight text-slate-800">Draft Revision</h4>
-                    <div className="mt-2 flex items-center gap-2">
-                        <StatusPill label="In Progress" theme={theme} />
-                        <AvatarGroup />
+                        <div className="mt-2.5 min-w-0">
+                            <span className={cn("inline-flex rounded-sm px-2 py-1 text-[10px] font-medium", theme.statusBg, theme.statusText)}>
+                                {item.reportId}
+                            </span>
+                            <h4 className="mt-2 truncate text-[14px] font-semibold leading-tight text-slate-800">{item.title}</h4>
+                            <div className="mt-2 flex items-center gap-2">
+                                <StatusPill label={item.status} theme={theme} />
+                                <AvatarGroup />
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <PreviewDivider theme={theme} />
-
-                <div className="mt-auto">
-                    <p className="text-[10px] font-semibold text-slate-700">Training Completion %</p>
-                    <div
-                        className="mx-auto mt-2 size-20 rounded-full p-1.5"
-                        style={{ background: `conic-gradient(${card.accent} 0 74%, #EBD6C7 74% 100%)` }}
-                    >
-                        <div className={cn("size-full rounded-full border border-dashed bg-white/90", theme.innerBorder)} />
-                    </div>
-                </div>
-            </PreviewShell>
+                ))}
+            </div>
         );
     }
 
@@ -366,7 +364,7 @@ function ProductPreview({ card }: { card: ProductCard }) {
                         <p className={cn("text-[9px] font-semibold uppercase text-slate-500", preview.accentEyebrow && theme.statusText)}>
                             {preview.eyebrow}
                         </p>
-                        <h4 className={cn("mt-1 text-[13px] font-semibold leading-tight text-slate-800", preview.marker === "checklist" && "text-[#6E50A2]")}>
+                        <h4 className={cn("mt-1 text-[14px] font-semibold leading-tight text-slate-800", preview.marker === "checklist" && "text-[#6E50A2]")}>
                             {preview.heading}
                         </h4>
                     </div>
@@ -455,13 +453,13 @@ export default function ProductsSection() {
                             key={card.title}
                             variants={cardVariants}
                             className={cn(
-                                "h-full w-full overflow-hidden rounded-3xl border lg:h-[222px]",
+                                "h-full w-full overflow-hidden rounded-3xl border lg:h-[280px]",
                                 card.surface,
                                 productThemes[card.key].outerBorder,
                             )}
                         >
-                            <div className="grid min-h-[220px] grid-rows-[auto_auto] gap-3 lg:h-full lg:min-h-0 lg:grid-cols-[1.45fr_1fr] lg:grid-rows-1">
-                                <div className="flex flex-col p-4 sm:p-5 lg:p-4">
+                            <div className="grid min-h-[220px] grid-rows-[auto_auto] gap-4 p-5 pt-7 sm:p-6 lg:h-full lg:min-h-0 lg:grid-cols-[1.28fr_1fr] lg:grid-rows-1 lg:p-7">
+                                <div className="flex flex-col">
                                     <h3 className="text-balance text-[18px] font-semibold leading-[1.24] sm:text-[19px] lg:text-[20px]" style={{ color: card.accent }}>
                                         {card.title}
                                     </h3>
@@ -478,7 +476,11 @@ export default function ProductsSection() {
                                     </a>
                                 </div>
 
-                                <ProductPreview card={card} />
+                                <div className="min-h-[160px] self-start overflow-visible lg:min-h-0">
+                                    <div className="h-full w-full origin-top-left -translate-y-2 scale-[1.08] translate-x-3 sm:-translate-y-2.5 sm:scale-[1.1] sm:translate-x-3.5 lg:-translate-y-3 lg:scale-[1.2] lg:translate-x-5">
+                                        <ProductPreview card={card} />
+                                    </div>
+                                </div>
                             </div>
                         </motion.article>
                     ))}
