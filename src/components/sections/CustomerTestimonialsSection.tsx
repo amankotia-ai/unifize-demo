@@ -23,7 +23,7 @@ const customerStories: CustomerStory[] = [
             "Compliance workflows stayed simple and transparent.",
         ],
         visualSrc:
-            "https://cdn.prod.website-files.com/6473a18f1599f3a16be86f38/6527cfd60fa29250ae9c5965_we23e23.webp",
+            "https://cdn.prod.website-files.com/6473a18f1599f3a16be86f38/6808cb40a929b0baa394763e_Frame%203273.avif",
         visualAlt: "Harmonic Bionics customer quote by Denis Machoka",
     },
     {
@@ -177,7 +177,7 @@ export default function CustomerTestimonialsSection() {
                                 transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }}
                                 className={`rounded-[24px] border bg-white p-5 pt-7 sm:p-6 lg:p-7 ${navbarBorderClass}`}
                             >
-                                <div className="grid items-start gap-7 lg:grid-cols-[0.88fr_1.12fr] lg:gap-8">
+                                <div className="grid items-start gap-7 lg:grid-cols-[0.88fr_1.12fr] lg:items-stretch lg:gap-8">
                                     <div className="flex flex-col">
                                         <h3 className="text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-black sm:text-[26px] lg:text-[28px]">
                                             {activeStory.heading}
@@ -201,11 +201,13 @@ export default function CustomerTestimonialsSection() {
                                         </ul>
                                     </div>
 
-                                    <div className={`w-full self-start overflow-hidden rounded-[20px] border ${navbarBorderClass}`}>
+                                    <div
+                                        className={`w-full h-[280px] overflow-hidden rounded-[20px] border sm:h-[340px] lg:h-full ${navbarBorderClass}`}
+                                    >
                                         <img
                                             src={activeStory.visualSrc}
                                             alt={activeStory.visualAlt}
-                                            className="block h-auto w-full object-cover"
+                                            className="block size-full object-cover"
                                             loading="lazy"
                                             decoding="async"
                                         />
