@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "motion/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -210,6 +210,13 @@ function MobileMenuCard({
 export default function Navbar() {
     const [demoModalOpen, setDemoModalOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const hasAutoOpenedDemoModalRef = useRef(false);
+    const hasUserScrolledRef = useRef(false);
+
+    const openDemoModal = () => {
+        hasAutoOpenedDemoModalRef.current = true;
+        setDemoModalOpen(true);
+    };
 
     useEffect(() => {
         const previousBodyOverflow = document.body.style.overflow;
@@ -225,6 +232,44 @@ export default function Navbar() {
             document.documentElement.style.overflow = previousHtmlOverflow;
         };
     }, [mobileMenuOpen]);
+
+    useEffect(() => {
+        if (hasAutoOpenedDemoModalRef.current) return;
+
+        const bottomThresholdPx = 24;
+
+        const maybeAutoOpenModal = () => {
+            if (mobileMenuOpen || demoModalOpen || hasAutoOpenedDemoModalRef.current) {
+                return;
+            }
+
+            const scrollTop = window.scrollY || window.pageYOffset;
+
+            if (scrollTop > 0) {
+                hasUserScrolledRef.current = true;
+            }
+
+            if (!hasUserScrolledRef.current) return;
+
+            const viewportBottom = scrollTop + window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            const isAtBottom = viewportBottom >= documentHeight - bottomThresholdPx;
+
+            if (!isAtBottom) return;
+
+            hasAutoOpenedDemoModalRef.current = true;
+            setDemoModalOpen(true);
+        };
+
+        maybeAutoOpenModal();
+        window.addEventListener("scroll", maybeAutoOpenModal, { passive: true });
+        window.addEventListener("resize", maybeAutoOpenModal);
+
+        return () => {
+            window.removeEventListener("scroll", maybeAutoOpenModal);
+            window.removeEventListener("resize", maybeAutoOpenModal);
+        };
+    }, [demoModalOpen, mobileMenuOpen]);
 
     return (
         <nav
@@ -325,7 +370,7 @@ export default function Navbar() {
                             <Button
                                 size="sm"
                                 className="h-[38px] px-[18px] bg-[#0052FF] hover:bg-[#0052FF] text-white text-[13px] font-medium rounded-lg"
-                                onClick={() => setDemoModalOpen(true)}
+                                onClick={openDemoModal}
                             >
                                 Book a Demo
                             </Button>
@@ -471,7 +516,7 @@ export default function Navbar() {
                                             style={{ borderRadius: "12px" }}
                                             onClick={() => {
                                                 setMobileMenuOpen(false);
-                                                setDemoModalOpen(true);
+                                                openDemoModal();
                                             }}
                                         >
                                             Book a Demo

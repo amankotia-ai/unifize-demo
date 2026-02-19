@@ -3,6 +3,7 @@ import HeroSection from "@/components/sections/HeroSection";
 import LogoMarquee from "@/components/sections/LogoMarquee";
 import WhyUnifizeSection from "@/components/sections/WhyUnifizeSection";
 import ProductsSection from "@/components/sections/ProductsSection";
+import IndustriesSection from "@/components/sections/IndustriesSection";
 import BenefitsTabsSection from "@/components/sections/BenefitsTabsSection";
 import CustomerTestimonialsSection from "@/components/sections/CustomerTestimonialsSection";
 import Footer from "@/components/sections/Footer";
@@ -32,6 +33,11 @@ function App() {
           <div className="section-frame-block">
             <span aria-hidden className="section-frame-divider" />
             <ProductsSection />
+          </div>
+
+          <div className="section-frame-block">
+            <span aria-hidden className="section-frame-divider" />
+            <IndustriesSection />
           </div>
 
           <div className="section-frame-block">
