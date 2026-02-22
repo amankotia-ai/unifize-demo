@@ -441,7 +441,13 @@ function renderFlowChartSvg(
     const focusedEdges = new Set(focus?.edgePairs ?? []);
 
     return (
-        <svg viewBox={viewBox} className={className} role="img" aria-label="Quality process flow chart">
+        <motion.svg
+            animate={{ viewBox }}
+            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+            className={className}
+            role="img"
+            aria-label="Quality process flow chart"
+        >
             <defs>
                 <marker id={markerId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="#6B7280" />
@@ -467,24 +473,25 @@ function renderFlowChartSvg(
                         d={pathData}
                         fill="none"
                         stroke={isFocused ? "#334155" : "#94A3B8"}
-                        strokeWidth={isFocused ? 2.1 : 1.3}
-                        opacity={isFocused ? 0.95 : 0.24}
                         strokeDasharray={edge.dashed ? "6 5" : undefined}
                         markerEnd={`url(#${markerId})`}
-                        animate={
-                            isFocused
-                                ? { strokeDashoffset: edge.dashed ? [-11, 0] : [-14, 0] }
-                                : undefined
-                        }
-                        transition={
-                            isFocused
+                        initial={false}
+                        animate={{
+                            opacity: isFocused ? 0.95 : 0.24,
+                            strokeWidth: isFocused ? 2.1 : 1.3,
+                            strokeDashoffset: isFocused ? (edge.dashed ? [-11, 0] : [-14, 0]) : 0,
+                        }}
+                        transition={{
+                            opacity: { duration: 1, ease: "easeInOut" },
+                            strokeWidth: { duration: 1, ease: "easeInOut" },
+                            strokeDashoffset: isFocused
                                 ? {
-                                      duration: edge.dashed ? 1.2 : 1.35,
-                                      ease: "linear",
-                                      repeat: Number.POSITIVE_INFINITY,
-                                  }
+                                    duration: edge.dashed ? 1.2 : 1.35,
+                                    ease: "linear",
+                                    repeat: Number.POSITIVE_INFINITY,
+                                }
                                 : undefined
-                        }
+                        }}
                     />
                 );
             })}
@@ -497,14 +504,18 @@ function renderFlowChartSvg(
                 return (
                     <motion.g
                         key={node.id}
-                        animate={isFocused ? { scale: [1, 1.02, 1] } : undefined}
-                        transition={
-                            isFocused
+                        initial={false}
+                        animate={{
+                            opacity: isFocused ? 1 : 0.34,
+                            scale: isFocused ? [1, 1.02, 1] : 1
+                        }}
+                        transition={{
+                            opacity: { duration: 1, ease: "easeInOut" },
+                            scale: isFocused
                                 ? { duration: 1.6, ease: "easeOut", repeat: Number.POSITIVE_INFINITY }
-                                : undefined
-                        }
+                                : { duration: 0.4 }
+                        }}
                         style={{ transformOrigin: `${node.x + node.width / 2}px ${node.y + node.height / 2}px` }}
-                        opacity={isFocused ? 1 : 0.34}
                     >
                         <rect
                             x={node.x}
@@ -535,7 +546,7 @@ function renderFlowChartSvg(
                 );
             })}
 
-        </svg>
+        </motion.svg>
     );
 }
 
@@ -678,17 +689,17 @@ export default function IndustriesSection() {
                                 const Icon = tab.icon;
 
                                 return (
-                                <TabsTrigger
-                                    key={tab.value}
-                                    value={tab.value}
-                                    className={cn(
-                                        "h-auto min-w-max flex-none rounded-full border border-[#EEF3FF] bg-white px-4 py-2.5 text-[13px] font-medium text-slate-600 transition-colors duration-150 sm:text-sm",
-                                        "data-[state=active]:!border-[#0052FF] data-[state=active]:!bg-[#0052FF] data-[state=active]:!text-white",
-                                    )}
-                                >
-                                    <Icon className={solidTabIconClass} aria-hidden="true" />
-                                    <span>{tab.label}</span>
-                                </TabsTrigger>
+                                    <TabsTrigger
+                                        key={tab.value}
+                                        value={tab.value}
+                                        className={cn(
+                                            "h-auto min-w-max flex-none rounded-full border border-[#EEF3FF] bg-white px-4 py-2.5 text-[13px] font-medium text-slate-600 transition-colors duration-150 sm:text-sm",
+                                            "data-[state=active]:!border-[#0052FF] data-[state=active]:!bg-[#0052FF] data-[state=active]:!text-white",
+                                        )}
+                                    >
+                                        <Icon className={solidTabIconClass} aria-hidden="true" />
+                                        <span>{tab.label}</span>
+                                    </TabsTrigger>
                                 );
                             })}
                         </TabsList>
@@ -794,25 +805,21 @@ export default function IndustriesSection() {
                                 aria-hidden="true"
                                 className="pointer-events-none absolute inset-0 opacity-80 [background-image:radial-gradient(circle,_rgba(148,163,184,0.35)_1px,_transparent_1px)] [background-size:18px_18px]"
                             />
-                            <AnimatePresence initial={false} mode="wait">
-                                <motion.div
-                                    key={`${activeIndustry}-${previewSceneIndex}`}
-                                    initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={shouldReduceMotion ? undefined : { opacity: 0, y: -8 }}
-                                    transition={{ duration: 0.18, ease: "easeOut" }}
-                                    className="absolute inset-0"
-                                >
-                                    {renderFlowChartSvg(
-                                        currentPreviewScene?.viewBox ?? "0 0 1500 700",
-                                        "relative z-10 h-full w-full max-w-none",
-                                        "flow-arrow-preview",
-                                        currentPreviewScene
-                                            ? { nodeIds: currentPreviewScene.nodeIds, edgePairs: currentPreviewScene.edgePairs }
-                                            : undefined,
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.8 }}
+                                className="absolute inset-0"
+                            >
+                                {renderFlowChartSvg(
+                                    currentPreviewScene?.viewBox ?? "0 0 1500 700",
+                                    "relative z-10 h-full w-full max-w-none",
+                                    "flow-arrow-preview",
+                                    currentPreviewScene
+                                        ? { nodeIds: currentPreviewScene.nodeIds, edgePairs: currentPreviewScene.edgePairs }
+                                        : undefined,
+                                )}
+                            </motion.div>
                             <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 border-t border-[#EEF3FF] bg-[#FCFCFD] px-3 py-2.5 text-[11px] font-medium text-slate-600 sm:px-4 sm:py-3 sm:text-[12px]">
                                 {currentPreviewScene?.title ?? activeTab.label}. Open the process map to view the full graph.
                             </div>
