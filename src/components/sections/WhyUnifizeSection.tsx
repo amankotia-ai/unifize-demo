@@ -332,11 +332,11 @@ export default function WhyUnifizeSection() {
                         <span className="section-pill-label">Why Unifize?</span>
                     </motion.div>
 
-                    <motion.h2 variants={itemVariants} className="mx-auto px-2 text-balance text-[28px] font-semibold leading-[1.22] tracking-[-0.015em] text-black sm:px-0 sm:text-[34px] lg:max-w-[24ch] lg:text-[36px] lg:leading-[1.2]">
+                    <motion.h2 variants={itemVariants} className="mx-auto px-2 text-balance text-[28px] font-semibold leading-[1.22] tracking-[-0.015em] text-heading sm:px-0 sm:text-[34px] lg:max-w-[24ch] lg:text-[36px] lg:leading-[1.2]">
                         One source of truth for people, processes, and information
                     </motion.h2>
 
-                    <motion.p variants={itemVariants} className="mx-auto mt-5 max-w-[40ch] text-pretty text-[14px] font-normal leading-[1.65] text-black sm:mt-6 sm:text-[15px] lg:max-w-[560px] lg:text-[17px] lg:leading-[1.72]">
+                    <motion.p variants={itemVariants} className="mx-auto mt-5 max-w-[40ch] text-pretty text-[14px] font-normal leading-[1.65] text-heading sm:mt-6 sm:text-[15px] lg:max-w-[560px] lg:text-[17px] lg:leading-[1.72]">
                         Reduce risk, boost productivity, and speed time to market.
                     </motion.p>
 

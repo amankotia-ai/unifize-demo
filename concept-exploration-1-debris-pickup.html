@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Concept Exploration 1 — Coordination Tax Rises, Unifize Picks Up the Debris</title>
+<style>
+  :root {
+    --bg: #08090d;
+    --ink: #d8d8e0;
+    --line: rgba(255,255,255,0.07);
+    --panel-line: rgba(255,255,255,0.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.head {
+    position: sticky; top: 0; z-index: 10;
+    padding: 12px 28px 10px;
+    font-size: 10.5px; letter-spacing: 0.1em;
+    background: rgba(8,9,13,0.92);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  header.head .tag { color: #6e6e78; }
+  section.concept {
+    padding: 8vh 4vw 5vh;
+    display: flex; flex-direction: column;
+  }
+  .title {
+    font-size: 11px; letter-spacing: 0.22em;
+    color: #8c8c94;
+    margin: 0 0 2vh;
+    text-transform: uppercase;
+  }
+  .title .num { color: #3a3a42; margin-right: 18px; }
+  .title .sub { color: #555; margin-left: 12px; font-size: 9.5px; letter-spacing: 0.18em; }
+  .strip { width: 100%; max-width: 1320px; margin: 0 auto; }
+  .strip svg { width: 100%; height: auto; display: block; }
+  .panel-frame { stroke: var(--panel-line); fill: none; stroke-width: 0.6; }
+  .panel-num   { fill: #2c2c34; font-size: 11px; letter-spacing: 0.12em; font-family: ui-monospace, monospace; }
+  .panel-label { fill: #4a4a52; font-size: 9.5px; letter-spacing: 0.14em; font-family: ui-monospace, monospace; }
+  .lbl-record { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.10em; fill: rgba(255,255,255,0.85); font-weight: 600; }
+  .lbl-zone   { font-family: ui-monospace, monospace; font-size: 13px; letter-spacing: 0.20em; fill: rgba(255,255,255,0.78); font-weight: 600; }
+  .lbl-cost   { font-family: ui-monospace, monospace; font-size: 16px; fill: #ff8866; font-weight: 700; }
+  .panel-num  { fill: #50505a !important; font-size: 14px !important; }
+  .panel-label { fill: #6e6e78 !important; font-size: 12px !important; }
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div><span class="tag">CONCEPT EXPLORATION 1 — DEBRIS-PICKUP PARADIGM · COORDINATION TAX RISES INSIDE SoC · UNIFIZE LIFTS IT INTO A GOVERNANCE LAYER</span></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+(() => {
+  // ──────────────────────────────────────────────────────
+  // CAMERA — fixed iso pose. Only the *world* changes panel-to-panel.
+  // ──────────────────────────────────────────────────────
+  function makeCam(opts) {
+    const az = (opts.az ?? 32) * Math.PI / 180;
+    const el = (opts.el ?? 35.264) * Math.PI / 180;
+    const scale = opts.scale ?? 13;
+    const cx = opts.cx ?? 0, cy = opts.cy ?? 0;
+    const lx = opts.lookX ?? 0, ly = opts.lookY ?? 0, lz = opts.lookZ ?? 0;
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const ce = Math.cos(el), se = Math.sin(el);
+    return (x, y, z) => {
+      const X = x - lx, Y = y - ly, Z = z - lz;
+      const sx = ca * X - sa * Z;
+      const depth = sa * X + ca * Z;
+      const sy = depth * se - Y * ce;
+      return [cx + sx * scale, cy + sy * scale];
+    };
+  }
+  const NS = (n, a, p) => {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', n);
+    if (a) for (const [k, v] of Object.entries(a)) e.setAttribute(k, v);
+    if (p) p.appendChild(e);
+    return e;
+  };
+  const ptsStr = (arr) => arr.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
+
+  // ──────────────────────────────────────────────────────
+  // PALETTES
+  // ──────────────────────────────────────────────────────
+  const SoR        = { top: '#5D6170', right: '#2E3038', front: '#42454F', stroke: 'rgba(255,255,255,0.32)' };
+  const SoR_PLINTH = { top: '#262A33', right: '#12141A', front: '#1B1E26', stroke: 'rgba(255,255,255,0.24)' };
+  const SoC_PLINTH = { top: '#2A2E38', right: '#13151E', front: '#1F222B', stroke: 'rgba(255,255,255,0.24)' };
+  const SoC_TILE   = { top: '#43485A', right: '#1E212C', front: '#2F3340', stroke: 'rgba(255,255,255,0.32)' };
+  const COST       = { top: '#ff8a4a', right: '#a83a18', front: '#dd5530', stroke: 'rgba(255,120,60,0.65)' };
+  const COST_DIM   = { top: '#a85a28', right: '#5e2a12', front: '#7a3a18', stroke: 'rgba(180,90,40,0.45)' };
+  const UNI        = { top: '#4D8AFF', right: '#0040C9', front: '#2462ff', stroke: 'rgba(180,200,255,0.50)' };
+  const UNI_DEEP   = { top: '#1A2A55', right: '#0A1228', front: '#101F40', stroke: 'rgba(125,150,255,0.45)' };
+  const UNI_GLOW   = { top: '#7FAEFF', right: '#1A5AFF', front: '#4D8AFF', stroke: 'rgba(255,255,255,0.55)' };
+  const CREAM      = { top: '#F4E6BC', right: '#9A8556', front: '#C8B074', stroke: 'rgba(140,100,40,0.55)' };
+
+  // Color-as-meaning fragments (yellow=approvals, green=resolved, blue=evidence, red=disagreement)
+  const FRAG = [
+    { top: '#F0C84A', right: '#9D7A1F', front: '#C49C2E', stroke: 'rgba(120,90,30,0.4)' },
+    { top: '#6BB07C', right: '#2E5A38', front: '#4A8253', stroke: 'rgba(40,80,50,0.4)' },
+    { top: '#7AA0E0', right: '#2E4D8A', front: '#4D72B8', stroke: 'rgba(40,60,120,0.4)' },
+    { top: '#D8635A', right: '#7A2B25', front: '#A8413A', stroke: 'rgba(110,40,30,0.4)' },
+  ];
+
+  // ──────────────────────────────────────────────────────
+  // ISO GRID BACKGROUND (subtle "iso paper")
+  // ──────────────────────────────────────────────────────
+  function addIsoGridPattern(svg, id) {
+    const defs = NS('defs', null, svg);
+    const W = 60, H = 60 * Math.tan(Math.PI / 6);
+    const pat = NS('pattern', { id, patternUnits: 'userSpaceOnUse', width: W, height: H }, defs);
+    NS('rect', { x: 0, y: 0, width: W, height: H, fill: '#0d0f15' }, pat);
+    NS('line', { x1: 0, y1: H, x2: W, y2: 0, stroke: 'rgba(125,150,255,0.07)', 'stroke-width': 0.6 }, pat);
+    NS('line', { x1: 0, y1: 0, x2: W, y2: H, stroke: 'rgba(125,150,255,0.07)', 'stroke-width': 0.6 }, pat);
+    NS('line', { x1: 0, y1: H/2, x2: W/2, y2: 0, stroke: 'rgba(125,150,255,0.04)', 'stroke-width': 0.4 }, pat);
+    NS('line', { x1: W/2, y1: 0, x2: W, y2: H/2, stroke: 'rgba(125,150,255,0.04)', 'stroke-width': 0.4 }, pat);
+    NS('line', { x1: 0, y1: H/2, x2: W/2, y2: H, stroke: 'rgba(125,150,255,0.04)', 'stroke-width': 0.4 }, pat);
+    NS('line', { x1: W/2, y1: H, x2: W, y2: H/2, stroke: 'rgba(125,150,255,0.04)', 'stroke-width': 0.4 }, pat);
+    return id;
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PRIMITIVES
+  // ──────────────────────────────────────────────────────
+  function isoCube(parent, cam, x, y, z, w, h, d, palette, rotate = 0) {
+    const hw = w/2, hd = d/2;
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const rot = (lx, lz) => [x + lx * cosR - lz * sinR, z + lx * sinR + lz * cosR];
+    const C = (lx, ly, lz) => {
+      const [wx, wz] = rot(lx, lz);
+      return cam(wx, y + ly, wz);
+    };
+    const A = C(-hw, 0, -hd), B = C(hw, 0, -hd), Cc = C(hw, 0, hd), D = C(-hw, 0, hd);
+    const E = C(-hw, h, -hd), F = C(hw, h, -hd), G = C(hw, h, hd), H = C(-hw, h, hd);
+    NS('polygon', { points: ptsStr([E, F, G, H]), fill: palette.top,   stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    NS('polygon', { points: ptsStr([D, Cc, G, H]), fill: palette.front, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    NS('polygon', { points: ptsStr([Cc, B, F, G]), fill: palette.right, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+  }
+
+  function isoFloor(parent, cam, half = 14, div = 14) {
+    const g = NS('g', { opacity: 0.4 }, parent);
+    const step = (half * 2) / div;
+    for (let i = 0; i <= div; i++) {
+      const t = -half + i * step;
+      const a = cam(-half, 0, t), b = cam(half, 0, t);
+      NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(255,255,255,0.05)', 'stroke-width': 0.4 }, g);
+      const c = cam(t, 0, -half), d = cam(t, 0, half);
+      NS('line', { x1: c[0], y1: c[1], x2: d[0], y2: d[1], stroke: 'rgba(255,255,255,0.05)', 'stroke-width': 0.4 }, g);
+    }
+  }
+
+  function mulberry32(seed) {
+    let t = seed;
+    return function () {
+      t = (t + 0x6D2B79F5) >>> 0;
+      let x = t;
+      x = Math.imul(x ^ (x >>> 15), x | 1);
+      x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function drawHuman(parent, cam, x, z, height = 0.65) {
+    const head = cam(x, height, z);
+    const sh = cam(x, height * 0.78, z);
+    const base = cam(x, height * 0.35, z);
+    NS('circle', { cx: head[0], cy: head[1], r: 2.8, fill: '#3a3a44', stroke: 'rgba(255,255,255,0.22)', 'stroke-width': 0.5 }, parent);
+    NS('path', {
+      d: `M${sh[0]-4},${sh[1]} Q${sh[0]},${sh[1]-4} ${sh[0]+4},${sh[1]} L${base[0]+3},${base[1]} L${base[0]-3},${base[1]} Z`,
+      fill: '#252530', stroke: 'rgba(255,255,255,0.20)', 'stroke-width': 0.5,
+    }, parent);
+  }
+
+  // ──────────────────────────────────────────────────────
+  // SoR ZONE (left) — 4 graphite cubes labeled QMS/ERP/PLM/MES
+  // ──────────────────────────────────────────────────────
+  function drawSoR(parent, cam, anchor) {
+    const labels = ['QMS', 'ERP', 'PLM', 'MES'];
+    const cw = 1.6, ch = 1.4, gap = 0.20;
+    const cols = 2, rows = 2;
+    const totalW = cols * cw + (cols - 1) * gap;
+    const totalD = rows * cw + (rows - 1) * gap;
+    isoCube(parent, cam, anchor.x, 0, anchor.z, totalW + 0.6, 0.22, totalD + 0.6, SoR_PLINTH);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const x = anchor.x + (c - 0.5) * (cw + gap);
+      const z = anchor.z + (r - 0.5) * (cw + gap);
+      isoCube(parent, cam, x, 0.22, z, cw, ch, cw, SoR);
+      // 4-dot glyph
+      const [gx, gy] = cam(x, 0.22 + ch + 0.01, z);
+      const ds = 2.2;
+      for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) {
+        NS('rect', {
+          x: gx - ds * 1.4 + dx * ds * 1.4 - ds / 2,
+          y: gy - ds * 1.4 + dy * ds * 1.4 - ds / 2,
+          width: ds, height: ds, fill: 'rgba(255,255,255,0.50)',
+        }, parent);
+      }
+      // small label below glyph on top face
+      const [lx, ly] = cam(x, 0.22 + ch + 0.02, z + cw / 2 - 0.15);
+      NS('text', { x: lx, y: ly + 10, 'text-anchor': 'middle', class: 'lbl-record' }, parent).textContent = labels[r * cols + c];
+    }
+    // Zone label below the SoR cluster
+    const [zlx, zly] = cam(anchor.x, 0, anchor.z + totalD / 2 + 1.4);
+    NS('text', { x: zlx, y: zly + 22, 'text-anchor': 'middle', class: 'lbl-zone' }, parent).textContent = 'SYSTEMS OF RECORD';
+  }
+
+  // ──────────────────────────────────────────────────────
+  // SoC ZONE (right) — three sub-zones:
+  //   (a) horizontal tools (Outlook / Teams / SharePoint / Excel — 2×2 tiles)
+  //   (b) point tools (smaller specialty tiles)
+  //   (c) meetings table (small hex with humans)
+  // ──────────────────────────────────────────────────────
+  function drawSoC(parent, cam, anchor) {
+    // Shared zone plinth — wide and shallow, runs under all three sub-zones
+    isoCube(parent, cam, anchor.x, 0, anchor.z, 6.5, 0.18, 5.5, SoC_PLINTH);
+
+    // (a) Horizontal tools — 2×2 Microsoft tile grid in upper-back of SoC zone
+    const horizontalTools = [
+      { name: 'outlook',    color: '#1B6BB5', letter: 'O' },
+      { name: 'excel',      color: '#21A366', letter: 'X' },
+      { name: 'sharepoint', color: '#038387', letter: 'S' },
+      { name: 'teams',      color: '#6264A7', letter: 'T' },
+    ];
+    const horizTileW = 0.95, horizGap = 0.10;
+    for (let i = 0; i < 4; i++) {
+      const r = Math.floor(i / 2), c = i % 2;
+      const tx = anchor.x + 1.4 + (c - 0.5) * (horizTileW + horizGap);
+      const tz = anchor.z + 1.5 + (r - 0.5) * (horizTileW + horizGap);
+      isoCube(parent, cam, tx, 0.18, tz, horizTileW, 0.20, horizTileW, SoC_TILE);
+      // pictogram on top face
+      const [px, py] = cam(tx, 0.40, tz);
+      const sp = horizTileW * 15;
+      NS('rect', { x: px - sp/2, y: py - sp/2, width: sp, height: sp, fill: horizontalTools[i].color, stroke: 'rgba(255,255,255,0.32)', 'stroke-width': 0.5, rx: 1.3 }, parent);
+      NS('text', { x: px, y: py + sp * 0.18, 'text-anchor': 'middle', fill: 'rgba(255,255,255,0.92)', 'font-family': 'ui-monospace, monospace', 'font-weight': 700, 'font-size': sp * 0.55 }, parent).textContent = horizontalTools[i].letter;
+    }
+
+    // (b) Point tools — three smaller domain-specific tile cubes in lower-back of SoC
+    const pointTools = [
+      { color: '#7AA0E0' }, // some chat-tool
+      { color: '#a89ad6' }, // some kanban-tool
+      { color: '#e8a85c' }, // some doc-tool
+    ];
+    for (let i = 0; i < 3; i++) {
+      const tx = anchor.x - 1.6 + i * 0.85;
+      const tz = anchor.z + 1.6;
+      isoCube(parent, cam, tx, 0.18, tz, 0.65, 0.55, 0.65, SoC_TILE);
+      // small colored dot on top to differentiate
+      const [px, py] = cam(tx, 0.74, tz);
+      NS('rect', { x: px - 5, y: py - 5, width: 10, height: 10, fill: pointTools[i].color, stroke: 'rgba(255,255,255,0.32)', 'stroke-width': 0.4, rx: 1 }, parent);
+    }
+
+    // (c) Meeting table — small hex in front-right area of SoC zone, with humans
+    const meetCx = anchor.x + 1.4, meetCz = anchor.z - 1.5;
+    const hexR = 0.75;
+    const hexTop = [], hexBot = [];
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      const wx = meetCx + Math.cos(a) * hexR;
+      const wz = meetCz + Math.sin(a) * hexR;
+      hexTop.push(cam(wx, 0.30, wz));
+      hexBot.push(cam(wx, 0.18, wz));
+    }
+    for (let i = 0; i < 6; i++) {
+      const j = (i + 1) % 6;
+      NS('polygon', { points: ptsStr([hexBot[i], hexBot[j], hexTop[j], hexTop[i]]), fill: SoC_TILE.front, stroke: SoC_TILE.stroke, 'stroke-width': 0.6 }, parent);
+    }
+    NS('polygon', { points: ptsStr(hexTop), fill: SoC_TILE.top, stroke: SoC_TILE.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    // 3 humans around the table
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + Math.PI / 4;
+      const px = meetCx + Math.cos(a) * (hexR + 0.5);
+      const pz = meetCz + Math.sin(a) * (hexR + 0.5);
+      drawHuman(parent, cam, px, pz, 0.55);
+    }
+
+    // Single zone label below SoC zone (no sub-zone labels — visual distinction is enough)
+    {
+      const [zlx, zly] = cam(anchor.x, 0, anchor.z + 4.0);
+      NS('text', { x: zlx, y: zly + 22, 'text-anchor': 'middle', class: 'lbl-zone' }, parent).textContent = 'SYSTEMS OF COORDINATION';
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // RISING COST BLOCK — a tall red column inside the SoC zone
+  // Height grows panel by panel. A small "$" mark sits at the top.
+  // ──────────────────────────────────────────────────────
+  function drawCostBlock(parent, cam, anchor, height, opts = {}) {
+    if (height <= 0.01) return;
+    const w = 0.7, d = 0.7;
+    // Main rising column
+    isoCube(parent, cam, anchor.x, anchor.y, anchor.z, w, height, d, COST);
+    // Horizontal stripes (thermometer fill ticks) every 0.8 world units
+    for (let h = 0.4; h < height; h += 0.8) {
+      const [a] = [cam(anchor.x - w/2 + 0.01, anchor.y + h, anchor.z + d/2)];
+      const [b] = [cam(anchor.x + w/2 - 0.01, anchor.y + h, anchor.z + d/2)];
+      NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(255,255,255,0.35)', 'stroke-width': 0.6 }, parent);
+    }
+    // Small "$" stamp at top
+    const [tx, ty] = cam(anchor.x, anchor.y + height + 0.10, anchor.z);
+    NS('text', { x: tx, y: ty + 4, 'text-anchor': 'middle', class: 'lbl-cost' }, parent).textContent = '$';
+  }
+
+  // ──────────────────────────────────────────────────────
+  // HOVERING COORDINATION EFFORTS (atoms above SoC)
+  // ──────────────────────────────────────────────────────
+  function drawCoordAtoms(parent, cam, center, count, seed = 7) {
+    const rng = mulberry32(seed);
+    const kinds = ['env', 'chat', 'doc', 'cal', 'at', 'call'];
+    for (let i = 0; i < count; i++) {
+      const x = center.x + (rng() - 0.5) * 6.5;
+      const y = 1.5 + rng() * 3.2;
+      const z = center.z + (rng() - 0.5) * 6.5;
+      const fp = FRAG[Math.floor(rng() * 4)];
+      drawAtom(parent, cam, x, y, z, kinds[Math.floor(rng() * kinds.length)], fp);
+    }
+  }
+  function drawAtom(parent, cam, x, y, z, kind, palette) {
+    const [px, py] = cam(x, y, z);
+    const s = 5.5;
+    palette = palette || FRAG[2];
+    if (kind === 'env') {
+      NS('rect', { x: px - s, y: py - s*0.5, width: s*2, height: s*1.1, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+      NS('polyline', { points: `${px - s},${py - s*0.5} ${px},${py + s*0.2} ${px + s},${py - s*0.5}`, fill: 'none', stroke: palette.right, 'stroke-width': 0.6 }, parent);
+    } else if (kind === 'chat') {
+      NS('rect', { x: px - s, y: py - s*0.5, width: s*2, height: s*1.1, rx: 2, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+    } else if (kind === 'doc') {
+      NS('rect', { x: px - s*0.55, y: py - s, width: s*1.1, height: s*1.5, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+    } else if (kind === 'at') {
+      NS('circle', { cx: px, cy: py, r: s*0.7, fill: 'none', stroke: palette.top, 'stroke-width': 0.8 }, parent);
+    } else if (kind === 'call') {
+      NS('circle', { cx: px, cy: py, r: s*0.7, fill: 'none', stroke: palette.top, 'stroke-width': 0.8 }, parent);
+    } else if (kind === 'cal') {
+      NS('rect', { x: px - s, y: py - s, width: s*2, height: s*1.4, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // DEBRIS (color-coded scraps on the gap floor)
+  // ──────────────────────────────────────────────────────
+  function drawDebris(parent, cam, center, count, spread = 2.4, seed = 13, yOffset = 0) {
+    const rng = mulberry32(seed);
+    const heap = [];
+    for (let i = 0; i < count; i++) {
+      const r = rng() * spread;
+      const ang = rng() * Math.PI * 2;
+      const x = center.x + Math.cos(ang) * r;
+      const z = center.z + Math.sin(ang) * r;
+      const y = (i % 7) * 0.04 + yOffset;
+      const palette = FRAG[Math.floor(rng() * 4)];
+      heap.push({ x, y, z, palette, rotate: (rng() - 0.5) * 60 });
+    }
+    heap.sort((a, b) => (a.x + a.z) - (b.x + b.z));
+    for (const f of heap) {
+      const w = 0.30 + rng() * 0.30;
+      const d = 0.24 + rng() * 0.28;
+      const h = 0.04 + rng() * 0.04;
+      isoCube(parent, cam, f.x, f.y, f.z, w, h, d, f.palette, f.rotate);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // THIN TRICKLE — a few atoms in mid-flight from SoC toward SoR
+  // (representing the small fraction of coordination work that
+  //  successfully reaches a record)
+  // ──────────────────────────────────────────────────────
+  function drawTrickle(parent, cam, socCenter, sorCenter, count, seed = 99) {
+    const rng = mulberry32(seed);
+    for (let i = 0; i < count; i++) {
+      const t = 0.2 + rng() * 0.7;
+      const x = socCenter.x + (sorCenter.x - socCenter.x) * t;
+      const z = socCenter.z + (sorCenter.z - socCenter.z) * t;
+      const y = 1.4 + Math.sin(rng() * Math.PI) * 0.6;
+      const fp = FRAG[Math.floor(rng() * 4)];
+      drawAtom(parent, cam, x, y, z, 'env', fp);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // UNIFIZE GOVERNANCE LAYER — wide blue canopy hovering above scene
+  // With audit-row cards on its top surface (the captured/organized work)
+  // ──────────────────────────────────────────────────────
+  function drawUnifizeLayer(parent, cam, anchor, opts = {}) {
+    const w = opts.w ?? 14, d = opts.d ?? 9;
+    const layerY = anchor.y;
+    // halo
+    isoCube(parent, cam, anchor.x, layerY - 0.08, anchor.z, w + 0.6, 0.12, d + 0.6, UNI_DEEP);
+    // main blue slab
+    isoCube(parent, cam, anchor.x, layerY, anchor.z, w, 0.30, d, UNI);
+    // Audit-row cards: cream tiles in a 3-row × 4-col grid, count revealed per opts
+    const cards = opts.cardCount ?? 0;
+    if (cards > 0) {
+      const cardW = 2.4, cardD = 1.4, cardGapX = 0.4, cardGapZ = 0.5;
+      const totalRows = 3, totalCols = 4;
+      const startX = anchor.x - (totalCols - 1) / 2 * (cardW + cardGapX);
+      const startZ = anchor.z - (totalRows - 1) / 2 * (cardD + cardGapZ);
+      for (let i = 0; i < Math.min(cards, totalRows * totalCols); i++) {
+        const r = Math.floor(i / totalCols), c = i % totalCols;
+        const cx = startX + c * (cardW + cardGapX);
+        const cz = startZ + r * (cardD + cardGapZ);
+        isoCube(parent, cam, cx, layerY + 0.30, cz, cardW, 0.12, cardD, CREAM);
+        // small color dot for "meaning"
+        const dot = cam(cx, layerY + 0.43, cz);
+        const fp = FRAG[i % 4];
+        NS('circle', { cx: dot[0], cy: dot[1], r: 2.2, fill: fp.top, stroke: fp.stroke, 'stroke-width': 0.4 }, parent);
+        // tiny mark to imply a row of text on the card
+        const m1 = cam(cx - cardW / 2 + 0.4, layerY + 0.43, cz - cardD / 2 + 0.4);
+        const m2 = cam(cx + cardW / 2 - 0.4, layerY + 0.43, cz - cardD / 2 + 0.4);
+        NS('line', { x1: m1[0], y1: m1[1], x2: m2[0], y2: m2[1], stroke: 'rgba(60,50,30,0.5)', 'stroke-width': 0.6 }, parent);
+        const n1 = cam(cx - cardW / 2 + 0.4, layerY + 0.43, cz);
+        const n2 = cam(cx, layerY + 0.43, cz);
+        NS('line', { x1: n1[0], y1: n1[1], x2: n2[0], y2: n2[1], stroke: 'rgba(60,50,30,0.4)', 'stroke-width': 0.5 }, parent);
+      }
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PICKUP TENDRILS — thin filaments rising from a point on the floor
+  // up to the Unifize layer, indicating "pickup" of debris / atoms.
+  // ──────────────────────────────────────────────────────
+  function drawPickup(parent, cam, from, to, opts = {}) {
+    const a = cam(from[0], from[1], from[2]);
+    const b = cam(to[0], to[1], to[2]);
+    const mid = [(a[0] + b[0]) / 2 + (opts.bowX || 0), (a[1] + b[1]) / 2 + (opts.bowY || 6)];
+    NS('path', {
+      d: `M${a[0]},${a[1]} Q${mid[0]},${mid[1]} ${b[0]},${b[1]}`,
+      fill: 'none', stroke: opts.color || 'rgba(125,150,255,0.55)',
+      'stroke-width': opts.w || 0.8,
+      'stroke-dasharray': opts.dash || '3 3',
+      'stroke-linecap': 'round',
+    }, parent);
+  }
+
+  // Bonus: a flying object mid-pickup (a small cube or atom rising)
+  function drawFlying(parent, cam, x, y, z, palette) {
+    isoCube(parent, cam, x, y, z, 0.25, 0.06, 0.22, palette, 0);
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PANEL DRAW (2 cols × 3 rows)
+  // ──────────────────────────────────────────────────────
+  // ONE panel per row → idx maps directly to vertical position
+  function drawPanel(parent, idx, panelW, panelH, gridId, drawFn, label) {
+    const x = 0, y = idx * panelH;
+    const g = NS('g', { transform: `translate(${x},${y})` }, parent);
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3, fill: `url(#${gridId})` }, g);
+    const clipId = `clip-${Math.random().toString(36).slice(2, 9)}`;
+    const defs = NS('defs', null, g);
+    const clip = NS('clipPath', { id: clipId }, defs);
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3 }, clip);
+    const clipped = NS('g', { 'clip-path': `url(#${clipId})` }, g);
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3, class: 'panel-frame' }, g);
+    NS('text', { x: 24, y: 32, class: 'panel-num' }, g).textContent = `0${idx + 1}`;
+    if (label) NS('text', { x: panelW - 24, y: 32, 'text-anchor': 'end', class: 'panel-label' }, g).textContent = label;
+    const cam = makeCam({ az: 32, el: 35.264, scale: 28, cx: panelW / 2, cy: panelH * 0.60, lookX: 0, lookY: 3, lookZ: 1.0 });
+    drawFn(clipped, cam);
+    return g;
+  }
+
+  // ──────────────────────────────────────────────────────
+  // THE PARADIGM — 6 panels build the world from empty to governed
+  // ──────────────────────────────────────────────────────
+  // World anchors (fixed across all 6 panels — only the *content* changes)
+  const SOR_A   = { x: -7, z: 6 };   // SoR on screen-left (back-left in world)
+  const SOC_A   = { x: 7, z: -4 };   // SoC on screen-right (front-right in world)
+  const COST_A  = { x: 8.3, y: 0.18, z: -5.6 };   // a back-corner inside SoC zone, rises upward
+  const GAP_CTR = { x: 0, z: 1 };    // middle gap, where debris accumulates
+  const UNI_A   = { x: 0, y: 5.0, z: 1 };          // governance layer hovers above
+
+  const PANEL_LABELS = [
+    'SoR + SoC',
+    '+ COST BEGINS',
+    '+ HOVERING WORK + DEBRIS',
+    'PEAK COORDINATION TAX',
+    'UNIFIZE LIFTS DEBRIS',
+    'GOVERNANCE LAYER',
+  ];
+
+  function paradigm(strip, panelW, panelH, gridId) {
+    // Per-panel quantities for the rising / accumulating / shrinking elements
+    const costH       = [0,    1.0,  2.2,  3.5,  3.5,  3.0];
+    const atomCount   = [0,    8,    18,   26,   16,   6];
+    const debrisCount = [0,    5,    18,   34,   22,   8];
+    const trickleCt   = [0,    2,    3,    4,    4,    5];
+    const unifizeOn   = [0,    0,    0,    0,    1,    1];
+    const cardCount   = [0,    0,    0,    0,    4,    12];
+
+    for (let p = 0; p < 6; p++) {
+      drawPanel(strip, p, panelW, panelH, gridId, (g, cam) => {
+        isoFloor(g, cam, 14, 16);
+        drawSoR(g, cam, SOR_A);
+        drawSoC(g, cam, SOC_A);
+
+        // Rising cost block (always inside SoC zone, height grows)
+        drawCostBlock(g, cam, COST_A, costH[p]);
+
+        // Hovering coordination efforts above SoC
+        if (atomCount[p] > 0) {
+          drawCoordAtoms(g, cam, { x: SOC_A.x, z: SOC_A.z }, atomCount[p], 200 + p * 10);
+        }
+
+        // Debris on the floor in the middle gap
+        if (debrisCount[p] > 0) {
+          drawDebris(g, cam, GAP_CTR, debrisCount[p], 2.4, 400 + p * 10);
+        }
+
+        // Thin trickle of work successfully reaching SoR
+        if (trickleCt[p] > 0) {
+          drawTrickle(g, cam, { x: SOC_A.x, z: SOC_A.z }, { x: SOR_A.x, z: SOR_A.z }, trickleCt[p], 700 + p * 10);
+        }
+
+        // Unifize governance layer (from panel 5)
+        if (unifizeOn[p]) {
+          drawUnifizeLayer(g, cam, UNI_A, { w: 16, d: 11, cardCount: cardCount[p] });
+
+          // Pickup tendrils: from debris pile up to Unifize
+          const tendrilRng = mulberry32(900 + p);
+          for (let i = 0; i < 8; i++) {
+            const dx = GAP_CTR.x + (tendrilRng() - 0.5) * 3.5;
+            const dz = GAP_CTR.z + (tendrilRng() - 0.5) * 3.5;
+            const tx = UNI_A.x + (tendrilRng() - 0.5) * 6;
+            const tz = UNI_A.z + (tendrilRng() - 0.5) * 4;
+            drawPickup(g, cam, [dx, 0.3, dz], [tx, UNI_A.y, tz], { color: 'rgba(125,150,255,0.45)' });
+          }
+          // Pickup tendrils: from coordination atoms up to Unifize
+          const atomRng = mulberry32(1000 + p);
+          for (let i = 0; i < 6; i++) {
+            const sx = SOC_A.x + (atomRng() - 0.5) * 4;
+            const sz = SOC_A.z + (atomRng() - 0.5) * 4;
+            const sy = 1.6 + atomRng() * 1.8;
+            const tx = UNI_A.x + (atomRng() - 0.5) * 6;
+            const tz = UNI_A.z + (atomRng() - 0.5) * 4;
+            drawPickup(g, cam, [sx, sy, sz], [tx, UNI_A.y, tz], { color: 'rgba(183,167,232,0.55)' });
+          }
+
+          // A few items shown MID-FLIGHT (rising to Unifize)
+          if (p === 4) {
+            // panel 5: mid-flight items
+            const midRng = mulberry32(1100);
+            for (let i = 0; i < 8; i++) {
+              const t = 0.2 + midRng() * 0.6;
+              const sx = GAP_CTR.x + (midRng() - 0.5) * 3;
+              const sz = GAP_CTR.z + (midRng() - 0.5) * 3;
+              const ty = 0.3 + (UNI_A.y - 0.3) * t;
+              const fp = FRAG[Math.floor(midRng() * 4)];
+              drawFlying(g, cam, sx, ty, sz, fp);
+            }
+          }
+        }
+      }, PANEL_LABELS[p]);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // RENDER
+  // ──────────────────────────────────────────────────────
+  const main = document.getElementById('main');
+  const section = document.createElement('section');
+  section.className = 'concept';
+  const h = document.createElement('div');
+  h.className = 'title';
+  h.innerHTML = `<span class="num">01</span>COORDINATION TAX RISES INSIDE SoC · UNIFIZE LIFTS THE DEBRIS · GOVERNANCE LAYER<span class="sub">SoR / SoC SEPARATE — Unifize works alongside, not as middleman</span>`;
+  section.appendChild(h);
+  const stripDiv = document.createElement('div');
+  stripDiv.className = 'strip';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  const panelW = 1280, panelH = 540;
+  const PANELS = 6;
+  svg.setAttribute('viewBox', `0 0 ${panelW} ${PANELS * panelH}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  const gridId = addIsoGridPattern(svg, 'iso-bg-0');
+  paradigm(svg, panelW, panelH, gridId);
+  stripDiv.appendChild(svg);
+  section.appendChild(stripDiv);
+  main.appendChild(section);
+})();
+</script>
+</body>
+</html>

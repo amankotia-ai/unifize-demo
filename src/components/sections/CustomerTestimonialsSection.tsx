@@ -155,10 +155,10 @@ export default function CustomerTestimonialsSection() {
                         </span>
                         <span className="section-pill-label">Customer Stories</span>
                     </motion.div>
-                    <motion.h2 variants={itemVariants} className="mx-auto max-w-[22ch] px-2 text-balance text-[28px] font-semibold leading-[1.22] tracking-[-0.015em] text-black sm:px-0 sm:text-[34px] lg:text-[36px] lg:leading-[1.2]">
+                    <motion.h2 variants={itemVariants} className="mx-auto max-w-[22ch] px-2 text-balance text-[28px] font-semibold leading-[1.22] tracking-[-0.015em] text-heading sm:px-0 sm:text-[34px] lg:text-[36px] lg:leading-[1.2]">
                         Meet Our Customers
                     </motion.h2>
-                    <motion.p variants={itemVariants} className="mx-auto mt-5 max-w-[58ch] text-pretty text-[14px] font-normal leading-[1.65] text-black sm:mt-6 sm:text-[15px] lg:text-[17px] lg:leading-[1.72]">
+                    <motion.p variants={itemVariants} className="mx-auto mt-5 max-w-[58ch] text-pretty text-[14px] font-normal leading-[1.65] text-heading sm:mt-6 sm:text-[15px] lg:text-[17px] lg:leading-[1.72]">
                         Unifize powers high-impact product teams. From next-gen startups who
                         reach for the stars to established greats who change the world.
                     </motion.p>
@@ -179,10 +179,10 @@ export default function CustomerTestimonialsSection() {
                             >
                                 <div className="grid items-start gap-7 lg:grid-cols-[0.88fr_1.12fr] lg:items-stretch lg:gap-8">
                                     <div className="flex flex-col">
-                                        <h3 className="text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-black sm:text-[26px] lg:text-[28px]">
+                                        <h3 className="text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-heading sm:text-[26px] lg:text-[28px]">
                                             {activeStory.heading}
                                         </h3>
-                                        <p className="mt-4 max-w-[58ch] text-pretty text-[14px] leading-[1.65] text-slate-600 sm:text-[15px] lg:text-[16px]">
+                                        <p className="mt-4 max-w-[58ch] text-pretty text-[14px] leading-[1.65] text-body-muted sm:text-[15px] lg:text-[16px]">
                                             {activeStory.description}
                                         </p>
 
@@ -190,9 +190,9 @@ export default function CustomerTestimonialsSection() {
                                             {activeStory.bullets.map((point) => (
                                                 <li
                                                     key={point}
-                                                    className="flex items-center gap-3.5 py-0.5 text-[13px] leading-[1.55] text-slate-600 sm:text-[14px]"
+                                                    className="flex items-center gap-3.5 py-0.5 text-[13px] leading-[1.55] text-body-muted sm:text-[14px]"
                                                 >
-                                                    <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-[#0052FF] text-white">
+                                                    <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-cta text-white">
                                                         <Check className="size-4 stroke-[2.8]" aria-hidden="true" />
                                                     </span>
                                                     <span className="text-pretty">{point}</span>

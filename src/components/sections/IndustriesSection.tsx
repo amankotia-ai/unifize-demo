@@ -674,10 +674,10 @@ export default function IndustriesSection() {
                         <span className="section-pill-label">Industries</span>
                     </div>
 
-                    <h2 className="mx-auto max-w-[24ch] px-2 text-balance text-[28px] font-semibold leading-[1.22] tracking-[-0.015em] text-black sm:px-0 sm:text-[34px] lg:text-[36px] lg:leading-[1.2]">
+                    <h2 className="mx-auto max-w-[24ch] px-2 text-balance text-[28px] font-semibold leading-[1.22] tracking-[-0.015em] text-heading sm:px-0 sm:text-[34px] lg:text-[36px] lg:leading-[1.2]">
                         Unifize adapts to the unique requirements of your industry
                     </h2>
-                    <p className="mx-auto mt-5 max-w-[58ch] text-pretty text-[14px] font-normal leading-[1.65] text-black sm:mt-6 sm:text-[15px] lg:text-[17px] lg:leading-[1.72]">
+                    <p className="mx-auto mt-5 max-w-[58ch] text-pretty text-[14px] font-normal leading-[1.65] text-heading sm:mt-6 sm:text-[15px] lg:text-[17px] lg:leading-[1.72]">
                         Enhance collaboration and streamline processes for all industries.
                     </p>
                 </div>
@@ -693,7 +693,7 @@ export default function IndustriesSection() {
                                         key={tab.value}
                                         value={tab.value}
                                         className={cn(
-                                            "h-auto min-w-max flex-none rounded-full border border-[#EEF3FF] bg-white px-4 py-2.5 text-[13px] font-medium text-slate-600 transition-colors duration-150 sm:text-sm",
+                                            "h-auto min-w-max flex-none rounded-full border border-[#EEF3FF] bg-white px-4 py-2.5 text-[13px] font-medium text-body-muted transition-colors duration-150 sm:text-sm",
                                             "data-[state=active]:!border-[#0052FF] data-[state=active]:!bg-[#0052FF] data-[state=active]:!text-white",
                                         )}
                                     >
@@ -721,12 +721,12 @@ export default function IndustriesSection() {
                                     <span className="inline-flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[#0052FF]/10 text-[#0052FF]">
                                         <ActiveTabIcon className={cn(solidTabIconClass, "size-8")} aria-hidden="true" />
                                     </span>
-                                    <h3 className="text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-black sm:text-[26px] lg:text-[28px]">
+                                    <h3 className="text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-heading sm:text-[26px] lg:text-[28px]">
                                         {activeTab.label}
                                     </h3>
                                 </motion.div>
 
-                                <motion.p variants={tabItemVariants} className="mt-3 max-w-[60ch] text-pretty text-[14px] font-normal leading-[1.65] text-slate-600 sm:text-[15px] lg:text-[16px]">
+                                <motion.p variants={tabItemVariants} className="mt-3 max-w-[60ch] text-pretty text-[14px] font-normal leading-[1.65] text-body-muted sm:text-[15px] lg:text-[16px]">
                                     {activeContent.lead}
                                 </motion.p>
 
@@ -748,10 +748,10 @@ export default function IndustriesSection() {
                                                         />
                                                     </span>
                                                     <div>
-                                                        <h4 className="text-[15px] font-semibold leading-tight tracking-[-0.015em] text-slate-900 sm:text-base">
+                                                        <h4 className="text-[15px] font-semibold leading-tight tracking-[-0.015em] text-heading sm:text-base">
                                                             {feature.title}
                                                         </h4>
-                                                        <p className="mt-1 text-pretty text-[13px] leading-[1.55] text-slate-600 sm:text-[14px]">
+                                                        <p className="mt-1 text-pretty text-[13px] leading-[1.55] text-body-muted sm:text-[14px]">
                                                             {feature.description}
                                                         </p>
                                                     </div>
@@ -787,8 +787,8 @@ export default function IndustriesSection() {
                     <div className="min-w-0 rounded-[24px] border border-[#EEF3FF] bg-white p-3 sm:p-4 lg:flex lg:h-full lg:min-h-[548px] lg:flex-col">
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1 py-0.5 sm:px-1.5">
                             <div>
-                                <p className="text-[11px] font-medium text-slate-500 sm:text-[12px]">End-to-End Flow Chart</p>
-                                <p className="text-[14px] font-semibold text-slate-900 sm:text-[15px]">{activeTab.label} Template</p>
+                                <p className="text-[11px] font-medium text-body-muted sm:text-[12px]">End-to-End Flow Chart</p>
+                                <p className="text-[14px] font-semibold text-heading sm:text-[15px]">{activeTab.label} Template</p>
                             </div>
                             <button
                                 type="button"
@@ -820,7 +820,7 @@ export default function IndustriesSection() {
                                         : undefined,
                                 )}
                             </motion.div>
-                            <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 border-t border-[#EEF3FF] bg-[#FCFCFD] px-3 py-2.5 text-[11px] font-medium text-slate-600 sm:px-4 sm:py-3 sm:text-[12px]">
+                            <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 border-t border-[#EEF3FF] bg-[#FCFCFD] px-3 py-2.5 text-[11px] font-medium text-body-muted sm:px-4 sm:py-3 sm:text-[12px]">
                                 {currentPreviewScene?.title ?? activeTab.label}. Open the process map to view the full graph.
                             </div>
                         </div>
@@ -829,23 +829,23 @@ export default function IndustriesSection() {
             </div>
 
             <Dialog open={isIndustryDetailsOpen} onOpenChange={setIsIndustryDetailsOpen}>
-                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-[#EEF3FF] bg-white p-0 shadow-xl sm:max-w-[760px]">
+                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-[#EEF3FF] bg-white p-0 shadow-xl sm:max-w-[760px] !duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95 data-[state=open]:slide-in-from-bottom-[6%] data-[state=closed]:slide-out-to-bottom-[6%]">
                     <div className="px-6 py-6 sm:px-7 sm:py-7">
-                        <div className="flex items-start gap-4">
+                        <div className="flex flex-col items-start gap-4">
                             <span className="inline-flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[#0052FF]/10 text-[#0052FF]">
                                 <ActiveTabIcon className={cn(solidTabIconClass, "size-8")} aria-hidden="true" />
                             </span>
                             <div>
-                                <DialogTitle className="text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-black sm:text-[26px]">
+                                <DialogTitle className="text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-heading sm:text-[26px]">
                                     {activeTab.label}
                                 </DialogTitle>
-                                <DialogDescription className="mt-2 max-w-[65ch] text-pretty text-[14px] leading-[1.65] text-slate-600 sm:text-[15px]">
+                                <DialogDescription className="mt-2 max-w-[65ch] text-pretty text-[14px] leading-[1.65] text-body-muted sm:text-[15px]">
                                     {activeContent.lead}
                                 </DialogDescription>
                             </div>
                         </div>
 
-                        <div className="mt-6 rounded-2xl border border-[#E7EFFF] bg-[#F8FBFF] p-4 sm:p-5">
+                        <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50 p-4 sm:p-5">
                             <ul className="space-y-0">
                                 {activeContent.features.map((feature) => {
                                     const FeatureIcon = feature.icon;
@@ -862,10 +862,10 @@ export default function IndustriesSection() {
                                                 />
                                             </span>
                                             <div>
-                                                <h4 className="text-[15px] font-semibold leading-tight tracking-[-0.015em] text-slate-900 sm:text-base">
+                                                <h4 className="text-[15px] font-semibold leading-tight tracking-[-0.015em] text-heading sm:text-base">
                                                     {feature.title}
                                                 </h4>
-                                                <p className="mt-1 text-pretty text-[13px] leading-[1.55] text-slate-600 sm:text-[14px]">
+                                                <p className="mt-1 text-pretty text-[13px] leading-[1.55] text-body-muted sm:text-[14px]">
                                                     {feature.description}
                                                 </p>
                                             </div>
@@ -879,15 +879,15 @@ export default function IndustriesSection() {
             </Dialog>
 
             <Dialog open={isProcessMapOpen} onOpenChange={setIsProcessMapOpen}>
-                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl border border-[#EEF3FF] bg-white p-0 shadow-xl sm:max-w-[96vw] lg:max-w-[1400px]">
+                <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl border border-[#EEF3FF] bg-white p-0 shadow-xl sm:max-w-[96vw] lg:max-w-[1400px] !duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95 data-[state=open]:slide-in-from-bottom-[6%] data-[state=closed]:slide-out-to-bottom-[6%]">
                     <div className="flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5">
-                        <DialogTitle className="text-balance text-[20px] font-semibold leading-tight text-slate-900 sm:text-[22px]">
+                        <DialogTitle className="text-balance text-[20px] font-semibold leading-tight text-heading sm:text-[22px]">
                             Full Process Map
                         </DialogTitle>
-                        <DialogDescription className="mt-1 text-pretty text-[13px] leading-[1.55] text-slate-600 sm:text-[14px]">
+                        <DialogDescription className="mt-1 text-pretty text-[13px] leading-[1.55] text-body-muted sm:text-[14px]">
                             Explore the full end-to-end quality flow with all dependencies, integrations, and control loops.
                         </DialogDescription>
-                        <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium text-slate-600 sm:text-[12px]">
+                        <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium text-body-muted sm:text-[12px]">
                             {flowLegendItems.map((item) => {
                                 const tone = flowToneStyles[item.tone];
 

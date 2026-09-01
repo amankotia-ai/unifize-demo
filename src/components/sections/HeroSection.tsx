@@ -54,18 +54,18 @@ export default function HeroSection() {
                     {/* Left Content */}
                     <div className="mx-auto flex max-w-[560px] flex-col items-center text-center lg:mx-0 lg:items-start lg:text-left">
                         {/* Heading */}
-                        <h1 className="text-balance text-[31px] font-semibold leading-[1.22] capitalize tracking-[-0.015em] text-black sm:text-[40px] lg:text-[36px] lg:leading-[1.2]">
+                        <h1 className="text-balance text-[31px] font-semibold leading-[1.22] capitalize tracking-[-0.015em] text-heading sm:text-[40px] lg:text-[36px] lg:leading-[1.2]">
                             <span className="block leading-[1.22] lg:leading-[1.2]">
                                 How effective product development, operations, and quality teams
                             </span>
-                            <span className="block leading-[1.22] text-[#0052FF] lg:leading-[1.2]">
+                            <span className="block leading-[1.22] text-cta lg:leading-[1.2]">
                                 {displayText}
                                 <span className="animate-pulse">|</span>
                             </span>
                         </h1>
 
                         {/* Description */}
-                        <p className="mt-6 max-w-[40ch] text-pretty text-[14px] font-normal leading-[1.65] text-black sm:text-[15px] lg:max-w-[460px] lg:text-[17px] lg:leading-[1.72]">
+                        <p className="mt-6 max-w-[40ch] text-pretty text-[14px] font-normal leading-[1.65] text-heading sm:text-[15px] lg:max-w-[460px] lg:text-[17px] lg:leading-[1.72]">
                             Unify your processes, enhance collaboration, and accelerate decision-making with Unifize—built for ISO and FDA-regulated companies.
                         </p>
 
@@ -74,9 +74,9 @@ export default function HeroSection() {
                             <input
                                 type="email"
                                 placeholder="Email Address"
-                                className="h-10 min-w-0 flex-1 border-none bg-transparent px-2 text-[14px] leading-[18px] font-medium text-black placeholder:text-[#646464] outline-none sm:h-11 sm:text-[15px]"
+                                className="h-10 min-w-0 flex-1 border-none bg-transparent px-2 text-[14px] leading-[18px] font-medium text-heading placeholder:text-[#646464] outline-none sm:h-11 sm:text-[15px]"
                             />
-                            <button className="h-10 shrink-0 rounded-[8px] border border-[#0052FF] bg-[#0052FF] px-[14px] text-[13px] font-medium leading-[18px] whitespace-nowrap text-white transition-colors hover:bg-[#0052FF] sm:h-[40px] sm:px-[18px] sm:text-[14px]">
+                            <button className="h-10 shrink-0 rounded-[8px] border border-cta bg-cta px-[14px] text-[13px] font-medium leading-[18px] whitespace-nowrap text-white transition-colors hover:bg-cta sm:h-[40px] sm:px-[18px] sm:text-[14px]">
                                 Book a Demo
                             </button>
                         </div>

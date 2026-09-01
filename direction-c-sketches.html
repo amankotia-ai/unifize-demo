@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Direction C / Data flow / sketches</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg-card: #0f0f0f;
+    --ink: rgba(255,255,255,0.92);
+    --ink-2: rgba(255,255,255,0.62);
+    --ink-3: rgba(255,255,255,0.38);
+    --ink-4: rgba(255,255,255,0.22);
+    --rule: rgba(255,255,255,0.10);
+    --rule-2: rgba(255,255,255,0.18);
+    --hot: #FF6B4A;
+    --hot-dim: rgba(255,107,74,0.45);
+    --sharepoint: rgba(220,220,230,0.95);
+    --teams: rgba(200,200,230,0.95);
+    --outlook: rgba(240,205,160,0.95);
+    --excel: rgba(190,225,190,0.95);
+    --meeting: rgba(240,190,175,0.95);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--ink);
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 56px 32px 96px; }
+
+  .page-head { margin-bottom: 48px; }
+  .page-head .kicker { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
+  .page-head h1 { font-size: clamp(28px, 3vw, 44px); font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; margin: 8px 0 14px; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--ink-2); max-width: 72ch; margin: 0; }
+  .page-head p + p { margin-top: 8px; }
+
+  .sketch { margin-top: 56px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--bg-card); }
+
+  .sketch-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; padding: 18px 22px; border-bottom: 1px solid var(--rule);
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .sketch-head .num { color: var(--ink); font-weight: 500; }
+  .sketch-head .name { color: var(--ink); font-weight: 400; letter-spacing: 0.16em; }
+  .sketch-head .gist { text-transform: none; letter-spacing: 0.01em; font-size: 13px; color: var(--ink-2); flex: 1; margin-left: 16px; max-width: 62ch; }
+
+  .sketch-copy {
+    padding: 20px 24px 20px;
+    border-bottom: 1px solid var(--rule);
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 24px; align-items: start;
+    background: var(--bg);
+  }
+  .sketch-copy .sc-headline {
+    font-size: clamp(18px, 1.9vw, 26px);
+    font-weight: 500; letter-spacing: -0.02em; line-height: 1.1;
+    color: var(--ink); margin: 0;
+  }
+  .sketch-copy .sc-headline .dim { color: var(--ink-3); }
+  .sketch-copy .sc-sub { font-size: 13px; color: var(--ink-2); margin: 8px 0 0; }
+  .sketch-copy .sc-sub b { color: var(--ink); font-weight: 500; }
+  .sketch-copy .sc-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--ink); color: var(--bg);
+    font-size: 11px; font-weight: 500; letter-spacing: 0.02em;
+    margin-top: 12px;
+  }
+  .sketch-copy .sc-badge {
+    font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-3); text-align: right;
+    max-width: 28ch; line-height: 1.5; padding-top: 4px;
+  }
+  .sketch-copy .sc-badge b { color: var(--ink); letter-spacing: 0.02em; text-transform: none; font-weight: 500; }
+
+  .hero { position: relative; width: 100%; aspect-ratio: 1440 / 700; background: var(--bg); overflow: hidden; }
+  .hero svg { width: 100%; height: 100%; display: block; }
+
+  .notes { padding: 18px 22px 22px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; font-size: 12.5px; line-height: 1.55; color: var(--ink-2); }
+  .notes h4 { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; font-weight: 500; }
+  .notes p { margin: 0; }
+
+  .meta-foot { margin-top: 64px; padding-top: 32px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-2); line-height: 1.65; }
+  .meta-foot h3 { font-size: 14px; font-weight: 500; color: var(--ink); margin: 0 0 10px; letter-spacing: -0.01em; }
+  .meta-foot ul { padding-left: 18px; margin: 0 0 18px; }
+  .meta-foot li { margin: 4px 0; }
+
+  .mono { font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace; }
+  .lbl-tiny { font-size: 8px; letter-spacing: 0.14em; fill: var(--ink-3); }
+  .lbl-small { font-size: 9px; letter-spacing: 0.06em; fill: var(--ink-2); }
+  .lbl-record { font-size: 10px; letter-spacing: 0.02em; fill: var(--ink); }
+  .lbl-caps { font-size: 9px; letter-spacing: 0.22em; fill: var(--ink-3); }
+
+  @media (max-width: 900px) {
+    .notes { grid-template-columns: 1fr; }
+    .sketch-copy { grid-template-columns: 1fr; }
+    .sketch-copy .sc-badge { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page-head">
+  <div class="kicker">E1 · Direction C · Sketches</div>
+  <h1>One clean event. An explosion of coordination. A closure that can't find its pieces.</h1>
+  <p>A CAPA enters the system of record as a single clean entry. Between opening and closure it fragments across SharePoint drafts, Teams threads, Outlook chains, Excel trackers, and meetings with no notes. To close the loop, someone has to find every piece again. Many pieces never return.</p>
+  <p>Four structural takes on the same three-beat story. Enter. Explode. Reassemble (or fail to). Same node vocabulary as linear-flow, Direction D, and Direction B. SharePoint, Teams, Outlook, Excel, Meeting. Microsoft-stack only. E1 shows the problem only; the governed thread is E2.</p>
+</header>
+
+<!-- ================================================================= -->
+<!-- SKETCH 01  .  FOUNTAIN EXPLOSION                                  -->
+<!-- ================================================================= -->
+<section class="sketch">
+  <div class="sketch-head">
+    <span><span class="num">01</span> &nbsp; <span class="name">Fountain explosion</span></span>
+    <span class="gist">One entry on the left. Five vectors radiating outward in a fan. The closure attempt on the right tries to reach back across the spray but can't reel everything in.</span>
+  </div>
+  <div class="sketch-copy">
+    <div>
+      <div class="sc-headline">One CAPA enters clean.<br><span class="dim">Thirty coordination events later, nobody can find it all.</span></div>
+      <div class="sc-sub">The gap has a name. <b>Coordination tax.</b></div>
+      <div class="sc-cta">Book a demo ›</div>
+    </div>
+    <div class="sc-badge">You'll recognise it. <b>CAPA still open from last quarter.</b></div>
+  </div>
+  <div class="hero">
+    <svg viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <!-- Zone labels -->
+      <g class="mono">
+        <text x="80" y="60" class="lbl-caps">01 · CLEAN ENTRY</text>
+        <text x="580" y="60" class="lbl-caps">02 · EXPLODES</text>
+        <text x="1200" y="60" class="lbl-caps" fill="var(--hot)">03 · REASSEMBLE?</text>
+      </g>
+
+      <!-- Entry card -->
+      <g class="mono">
+        <rect x="60" y="320" width="216" height="56" rx="5" fill="none" stroke="rgba(255,255,255,0.5)"/>
+        <circle cx="74" cy="348" r="4" fill="rgba(255,255,255,0.95)"/>
+        <text x="86" y="342" class="lbl-caps">SYSTEM OF RECORD</text>
+        <text x="86" y="360" class="lbl-record" font-size="12">CAPA-241 · opened</text>
+      </g>
+
+      <!-- Pulse point (where it explodes) -->
+      <g>
+        <circle cx="320" cy="348" r="10" fill="none" stroke="var(--hot)" stroke-width="1.5"/>
+        <circle cx="320" cy="348" r="18" fill="none" stroke="var(--hot-dim)" stroke-width="1" stroke-dasharray="2 3"/>
+        <circle cx="320" cy="348" r="3" fill="var(--hot)"/>
+      </g>
+      <line x1="276" y1="348" x2="310" y2="348" stroke="rgba(255,255,255,0.35)"/>
+
+      <!-- 5 radiating vectors -->
+      <g stroke="rgba(255,255,255,0.12)" fill="none" stroke-dasharray="3 4">
+        <!-- A: upper-left diagonal -->
+        <path d="M 320,348 L 520,130"/>
+        <!-- B: upper-right -->
+        <path d="M 320,348 L 900,160"/>
+        <!-- C: straight right -->
+        <path d="M 320,348 L 1060,348"/>
+        <!-- D: lower-right -->
+        <path d="M 320,348 L 900,560"/>
+        <!-- E: lower-left diagonal -->
+        <path d="M 320,348 L 520,590"/>
+      </g>
+
+      <!-- Vector A cards (upper-left) -->
+      <g class="mono" font-weight="500">
+        <g transform="translate(360,290)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · @qa</text></g>
+        <g transform="translate(400,240)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · DM</text></g>
+        <g transform="translate(440,190)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · fork</text></g>
+        <g transform="translate(480,140)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · thr</text></g>
+      </g>
+
+      <!-- Vector B cards (upper-right) -->
+      <g class="mono" font-weight="500">
+        <g transform="translate(440,310)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · Re</text></g>
+        <g transform="translate(560,260)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · FW</text></g>
+        <g transform="translate(680,220)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · cc6</text></g>
+        <g transform="translate(800,180)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · Re²</text></g>
+        <g transform="translate(880,140)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · Re³</text></g>
+      </g>
+
+      <!-- Vector C cards (straight right) -->
+      <g class="mono" font-weight="500">
+        <g transform="translate(420,338)"><rect width="108" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT v1</text></g>
+        <g transform="translate(560,338)"><rect width="108" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT v3</text></g>
+        <g transform="translate(700,338)"><rect width="108" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT v5</text></g>
+        <g transform="translate(840,338)"><rect width="108" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT FIN</text></g>
+        <g transform="translate(980,338)"><rect width="108" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT FIN₂</text></g>
+      </g>
+
+      <!-- Vector D cards (lower-right) -->
+      <g class="mono" font-weight="500">
+        <g transform="translate(440,380)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · v2</text></g>
+        <g transform="translate(560,440)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · merge</text></g>
+        <g transform="translate(680,490)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · FINAL</text></g>
+        <g transform="translate(800,540)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · FIN₂</text></g>
+        <g transform="translate(880,580)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · v7</text></g>
+      </g>
+
+      <!-- Vector E cards (lower-left) -->
+      <g class="mono" font-weight="500">
+        <g transform="translate(360,410)"><rect width="104" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--meeting)"/><text x="18" y="14" class="lbl-small">MEETING 45m</text></g>
+        <g transform="translate(400,470)"><rect width="104" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--meeting)"/><text x="18" y="14" class="lbl-small">MEETING 30m</text></g>
+        <g transform="translate(440,530)"><rect width="104" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--meeting)"/><text x="18" y="14" class="lbl-small">MEETING 25m</text></g>
+        <g transform="translate(480,590)"><rect width="104" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--meeting)"/><text x="18" y="14" class="lbl-small">MEETING 15m</text></g>
+      </g>
+
+      <!-- Closure attempt on the right -->
+      <g class="mono">
+        <rect x="1184" y="304" width="196" height="88" rx="6" fill="none" stroke="var(--hot-dim)" stroke-dasharray="4 4"/>
+        <text x="1198" y="322" class="lbl-caps" fill="var(--hot)">CLOSURE ATTEMPT</text>
+        <line x1="1198" y1="330" x2="1366" y2="330" stroke="var(--rule)"/>
+        <text x="1198" y="354" class="lbl-record" font-size="11">Reassemble evidence</text>
+        <text x="1198" y="370" class="lbl-small" fill="var(--ink-2)" font-size="10">and approvals</text>
+        <text x="1198" y="386" class="lbl-small" fill="var(--hot)" font-size="10">18 of 28 found</text>
+      </g>
+
+      <!-- Magnetic pull lines from closure back to some fragments (faded, incomplete) -->
+      <g stroke="var(--hot-dim)" stroke-dasharray="2 3" fill="none" opacity="0.6">
+        <path d="M 1184,348 Q 1000,348 840,349"/>
+        <path d="M 1184,336 Q 1000,300 980,348"/>
+        <path d="M 1184,360 Q 1000,400 880,589"/>
+        <path d="M 1184,326 Q 1020,200 980,190"/>
+      </g>
+
+      <!-- Orphaned fragments indicator -->
+      <g class="mono">
+        <text x="80" y="660" class="lbl-caps" fill="var(--hot)">10 ORPHANED</text>
+        <text x="200" y="660" class="lbl-small" fill="var(--ink-3)">fragments never linked back to CAPA-241</text>
+      </g>
+    </svg>
+  </div>
+  <div class="notes">
+    <div><h4>5-second read</h4><p>One card on the left. A fan of fragments radiating outward. A broken closure card on the right with "18 of 28 found." The fan shape says "explosion," the orphan counter says "you can't close what you can't find."</p></div>
+    <div><h4>Animation hook</h4><p>Entry card settles. The pulse ring at x=320 throbs once. Five vectors draw outward simultaneously, each a staggered stroke animation. Fragments materialise along vectors. Finally, closure node pulls magnetically at connected fragments; orphan count ticks up.</p></div>
+    <div><h4>Risks</h4><p>Most decorative of the four. The fan can look like a fireworks poster if the connectors are too prominent. Keep vectors thin-dashed, let the cards carry the read. The orphan counter is load-bearing and must be legible at scroll speed.</p></div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!-- SKETCH 02  .  BRANCHING TREE                                      -->
+<!-- ================================================================= -->
+<section class="sketch">
+  <div class="sketch-head">
+    <span><span class="num">02</span> &nbsp; <span class="name">Branching tree</span></span>
+    <span class="gist">Entry on the left. Binary branching rightward. One becomes five becomes fifteen becomes thirty-plus. Closure on the right has to gather every leaf.</span>
+  </div>
+  <div class="sketch-copy">
+    <div>
+      <div class="sc-headline">1 entry. 5 tools. 30+ artifacts.<br><span class="dim">That's one CAPA, not your pipeline.</span></div>
+      <div class="sc-sub">The gap has a name. <b>Coordination tax.</b></div>
+      <div class="sc-cta">Book a demo ›</div>
+    </div>
+    <div class="sc-badge">You'll recognise it. <b>CAPA still open from last quarter.</b></div>
+  </div>
+  <div class="hero">
+    <svg viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <g class="mono">
+        <text x="80" y="60" class="lbl-caps">ENTRY</text>
+        <text x="340" y="60" class="lbl-caps">5 TOOLS</text>
+        <text x="620" y="60" class="lbl-caps">15 ARTIFACTS</text>
+        <text x="900" y="60" class="lbl-caps">30+ LEAVES</text>
+        <text x="1220" y="60" class="lbl-caps" fill="var(--hot)">CLOSURE GATHER</text>
+      </g>
+
+      <!-- Entry -->
+      <g class="mono">
+        <rect x="60" y="336" width="180" height="40" rx="4" fill="none" stroke="rgba(255,255,255,0.5)"/>
+        <circle cx="74" cy="356" r="3.5" fill="rgba(255,255,255,0.95)"/>
+        <text x="86" y="352" class="lbl-tiny">SYSTEM OF RECORD</text>
+        <text x="86" y="366" class="lbl-record">CAPA-241 opened</text>
+      </g>
+
+      <!-- L1 branch connectors (entry to 5 tool hubs at x=340) -->
+      <g stroke="rgba(255,255,255,0.2)" fill="none">
+        <path d="M 240,356 C 280,356 290,140 340,140"/>
+        <path d="M 240,356 C 280,356 290,248 340,248"/>
+        <path d="M 240,356 L 340,356"/>
+        <path d="M 240,356 C 280,356 290,464 340,464"/>
+        <path d="M 240,356 C 280,356 290,572 340,572"/>
+      </g>
+
+      <!-- L1 nodes (5 tool hubs at x=340) -->
+      <g class="mono">
+        <g transform="translate(340,122)"><rect width="140" height="36" rx="4" fill="none" stroke="rgba(255,255,255,0.35)"/><circle cx="11" cy="18" r="2.5" fill="var(--sharepoint)"/><text x="22" y="16" class="lbl-tiny">L1</text><text x="22" y="28" class="lbl-record">SharePoint</text></g>
+        <g transform="translate(340,230)"><rect width="140" height="36" rx="4" fill="none" stroke="rgba(255,255,255,0.35)"/><circle cx="11" cy="18" r="2.5" fill="var(--teams)"/><text x="22" y="16" class="lbl-tiny">L1</text><text x="22" y="28" class="lbl-record">Teams</text></g>
+        <g transform="translate(340,338)"><rect width="140" height="36" rx="4" fill="none" stroke="rgba(255,255,255,0.35)"/><circle cx="11" cy="18" r="2.5" fill="var(--outlook)"/><text x="22" y="16" class="lbl-tiny">L1</text><text x="22" y="28" class="lbl-record">Outlook</text></g>
+        <g transform="translate(340,446)"><rect width="140" height="36" rx="4" fill="none" stroke="rgba(255,255,255,0.35)"/><circle cx="11" cy="18" r="2.5" fill="var(--excel)"/><text x="22" y="16" class="lbl-tiny">L1</text><text x="22" y="28" class="lbl-record">Excel</text></g>
+        <g transform="translate(340,554)"><rect width="140" height="36" rx="4" fill="none" stroke="rgba(255,255,255,0.35)"/><circle cx="11" cy="18" r="2.5" fill="var(--meeting)"/><text x="22" y="16" class="lbl-tiny">L1</text><text x="22" y="28" class="lbl-record">Meeting</text></g>
+      </g>
+
+      <!-- L2 connectors (each of 5 hubs to 3 children at x=620). Total 15 -->
+      <g stroke="rgba(255,255,255,0.12)" fill="none">
+        <!-- SharePoint → 3 children -->
+        <path d="M 480,140 C 540,140 560,94 620,94"/>
+        <path d="M 480,140 L 620,140"/>
+        <path d="M 480,140 C 540,140 560,186 620,186"/>
+        <!-- Teams → 3 -->
+        <path d="M 480,248 C 540,248 560,202 620,202"/>
+        <path d="M 480,248 L 620,248"/>
+        <path d="M 480,248 C 540,248 560,294 620,294"/>
+        <!-- Outlook → 3 -->
+        <path d="M 480,356 C 540,356 560,310 620,310"/>
+        <path d="M 480,356 L 620,356"/>
+        <path d="M 480,356 C 540,356 560,402 620,402"/>
+        <!-- Excel → 3 -->
+        <path d="M 480,464 C 540,464 560,418 620,418"/>
+        <path d="M 480,464 L 620,464"/>
+        <path d="M 480,464 C 540,464 560,510 620,510"/>
+        <!-- Meeting → 3 -->
+        <path d="M 480,572 C 540,572 560,526 620,526"/>
+        <path d="M 480,572 L 620,572"/>
+        <path d="M 480,572 C 540,572 560,618 620,618"/>
+      </g>
+
+      <!-- L2 nodes (15 at x=620) -->
+      <g class="mono" font-weight="500">
+        <!-- SharePoint -->
+        <g transform="translate(620,82)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--sharepoint)"/><text x="15" y="14" class="lbl-small">SHARE · v1</text></g>
+        <g transform="translate(620,128)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--sharepoint)"/><text x="15" y="14" class="lbl-small">SHARE · v2</text></g>
+        <g transform="translate(620,174)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--sharepoint)"/><text x="15" y="14" class="lbl-small">SHARE · FIN</text></g>
+        <!-- Teams -->
+        <g transform="translate(620,190)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--teams)"/><text x="15" y="14" class="lbl-small">TEAMS · thr</text></g>
+        <g transform="translate(620,236)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--teams)"/><text x="15" y="14" class="lbl-small">TEAMS · DM</text></g>
+        <g transform="translate(620,282)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--teams)"/><text x="15" y="14" class="lbl-small">TEAMS · fork</text></g>
+        <!-- Outlook -->
+        <g transform="translate(620,298)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--outlook)"/><text x="15" y="14" class="lbl-small">OUTLOOK · Re</text></g>
+        <g transform="translate(620,344)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--outlook)"/><text x="15" y="14" class="lbl-small">OUTLOOK · FW</text></g>
+        <g transform="translate(620,390)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--outlook)"/><text x="15" y="14" class="lbl-small">OUTLOOK · cc</text></g>
+        <!-- Excel -->
+        <g transform="translate(620,406)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--excel)"/><text x="15" y="14" class="lbl-small">EXCEL · v1</text></g>
+        <g transform="translate(620,452)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--excel)"/><text x="15" y="14" class="lbl-small">EXCEL · merge</text></g>
+        <g transform="translate(620,498)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--excel)"/><text x="15" y="14" class="lbl-small">EXCEL · FIN</text></g>
+        <!-- Meeting -->
+        <g transform="translate(620,514)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--meeting)"/><text x="15" y="14" class="lbl-small">MEET 45m</text></g>
+        <g transform="translate(620,560)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--meeting)"/><text x="15" y="14" class="lbl-small">MEET 30m</text></g>
+        <g transform="translate(620,606)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="11" r="2" fill="var(--meeting)"/><text x="15" y="14" class="lbl-small">MEET 25m</text></g>
+      </g>
+
+      <!-- L3 connectors (each of 15 to 2 children at x=900). Total 30 -->
+      <g stroke="rgba(255,255,255,0.08)" fill="none">
+        <!-- SharePoint children -->
+        <path d="M 716,94 C 780,94 820,80 900,80"/><path d="M 716,94 C 780,94 820,108 900,108"/>
+        <path d="M 716,140 C 780,140 820,126 900,126"/><path d="M 716,140 C 780,140 820,154 900,154"/>
+        <path d="M 716,186 C 780,186 820,172 900,172"/><path d="M 716,186 C 780,186 820,200 900,200"/>
+        <!-- Teams children -->
+        <path d="M 716,202 C 780,202 820,218 900,218"/><path d="M 716,202 C 780,202 820,246 900,246"/>
+        <path d="M 716,248 C 780,248 820,264 900,264"/><path d="M 716,248 C 780,248 820,292 900,292"/>
+        <path d="M 716,294 C 780,294 820,310 900,310"/><path d="M 716,294 C 780,294 820,338 900,338"/>
+        <!-- Outlook children -->
+        <path d="M 716,310 C 780,310 820,356 900,356"/><path d="M 716,310 C 780,310 820,384 900,384"/>
+        <path d="M 716,356 C 780,356 820,402 900,402"/><path d="M 716,356 C 780,356 820,430 900,430"/>
+        <path d="M 716,402 C 780,402 820,448 900,448"/><path d="M 716,402 C 780,402 820,476 900,476"/>
+        <!-- Excel children -->
+        <path d="M 716,418 C 780,418 820,494 900,494"/><path d="M 716,418 C 780,418 820,522 900,522"/>
+        <path d="M 716,464 C 780,464 820,540 900,540"/><path d="M 716,464 C 780,464 820,568 900,568"/>
+        <path d="M 716,510 C 780,510 820,586 900,586"/><path d="M 716,510 C 780,510 820,614 900,614"/>
+      </g>
+
+      <!-- L3 leaves (small, 24 visible) -->
+      <g class="mono" font-weight="500">
+        <g transform="translate(900,72)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--sharepoint)"/><text x="12" y="10" class="lbl-small" font-size="7.5">SHARE·v3</text></g>
+        <g transform="translate(900,100)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--sharepoint)"/><text x="12" y="10" class="lbl-small" font-size="7.5">SHARE·v4</text></g>
+        <g transform="translate(900,118)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--sharepoint)"/><text x="12" y="10" class="lbl-small" font-size="7.5">SHARE·v5</text></g>
+        <g transform="translate(900,146)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--sharepoint)"/><text x="12" y="10" class="lbl-small" font-size="7.5">SHARE·v6</text></g>
+        <g transform="translate(900,164)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--sharepoint)"/><text x="12" y="10" class="lbl-small" font-size="7.5">SHARE·FIN₂</text></g>
+        <g transform="translate(900,192)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--sharepoint)"/><text x="12" y="10" class="lbl-small" font-size="7.5">SHARE·FIN₃</text></g>
+        <g transform="translate(900,210)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--teams)"/><text x="12" y="10" class="lbl-small" font-size="7.5">TEAMS·t1</text></g>
+        <g transform="translate(900,238)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--teams)"/><text x="12" y="10" class="lbl-small" font-size="7.5">TEAMS·t2</text></g>
+        <g transform="translate(900,256)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--teams)"/><text x="12" y="10" class="lbl-small" font-size="7.5">TEAMS·DM1</text></g>
+        <g transform="translate(900,284)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--teams)"/><text x="12" y="10" class="lbl-small" font-size="7.5">TEAMS·DM2</text></g>
+        <g transform="translate(900,302)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--teams)"/><text x="12" y="10" class="lbl-small" font-size="7.5">TEAMS·f1</text></g>
+        <g transform="translate(900,330)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--teams)"/><text x="12" y="10" class="lbl-small" font-size="7.5">TEAMS·f2</text></g>
+        <g transform="translate(900,348)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·Re1</text></g>
+        <g transform="translate(900,376)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·Re2</text></g>
+        <g transform="translate(900,394)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·FW1</text></g>
+        <g transform="translate(900,422)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·FW2</text></g>
+        <g transform="translate(900,440)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·cc1</text></g>
+        <g transform="translate(900,468)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·cc2</text></g>
+        <g transform="translate(900,486)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--excel)"/><text x="12" y="10" class="lbl-small" font-size="7.5">EXCEL·v2</text></g>
+        <g transform="translate(900,514)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--excel)"/><text x="12" y="10" class="lbl-small" font-size="7.5">EXCEL·v3</text></g>
+        <g transform="translate(900,532)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--excel)"/><text x="12" y="10" class="lbl-small" font-size="7.5">EXCEL·m1</text></g>
+        <g transform="translate(900,560)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--excel)"/><text x="12" y="10" class="lbl-small" font-size="7.5">EXCEL·m2</text></g>
+        <g transform="translate(900,578)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--excel)"/><text x="12" y="10" class="lbl-small" font-size="7.5">EXCEL·FIN₂</text></g>
+        <g transform="translate(900,606)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--excel)"/><text x="12" y="10" class="lbl-small" font-size="7.5">EXCEL·FIN₃</text></g>
+      </g>
+
+      <!-- Closure gather on right -->
+      <g class="mono">
+        <rect x="1120" y="260" width="256" height="180" rx="6" fill="none" stroke="var(--hot-dim)" stroke-dasharray="5 4"/>
+        <text x="1136" y="282" class="lbl-caps" fill="var(--hot)">CLOSURE · GATHER</text>
+        <line x1="1136" y1="292" x2="1360" y2="292" stroke="var(--rule)"/>
+        <text x="1136" y="316" class="lbl-record" font-size="11">Every leaf must be</text>
+        <text x="1136" y="332" class="lbl-record" font-size="11">referenced in the record.</text>
+        <text x="1136" y="364" class="lbl-small" fill="var(--ink-3)" font-size="10">Status after 3 weeks:</text>
+        <text x="1136" y="388" fill="var(--hot)" font-family="JetBrains Mono, monospace" font-size="18" font-weight="500">22 / 30</text>
+        <text x="1220" y="388" fill="var(--ink-3)" font-size="11">linked</text>
+        <text x="1136" y="418" fill="var(--hot)" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500">8 orphaned</text>
+      </g>
+
+      <!-- Some faint gather lines pulling in from leaves -->
+      <g stroke="var(--hot-dim)" stroke-dasharray="2 3" fill="none" opacity="0.5">
+        <path d="M 972,125 Q 1080,125 1120,300"/>
+        <path d="M 972,265 Q 1080,265 1120,320"/>
+        <path d="M 972,400 Q 1080,400 1120,360"/>
+        <path d="M 972,540 Q 1080,540 1120,400"/>
+        <path d="M 972,605 Q 1080,605 1120,425"/>
+      </g>
+    </svg>
+  </div>
+  <div class="notes">
+    <div><h4>5-second read</h4><p>A deterministic tree, left to right. One becomes five, becomes fifteen, becomes thirty. Closure on the right fails to gather eight leaves. The shape is a classic fractal and the numbers on the right make it bite.</p></div>
+    <div><h4>Animation hook</h4><p>Entry card settles. L1 branches draw out, five tool nodes appear. L2 branches cascade, 15 sub-nodes. L3 leaves rain in. A second later, the closure gather box activates and faint gather-lines pull toward some leaves. Orphan counter increments to eight.</p></div>
+    <div><h4>Risks</h4><p>Looks like an ML model diagram or an org chart if the leaves stay too regular. Keep the leaves slightly jittered and the connectors faint. The read must be "chaos that looks organised" not "organisation with variance."</p></div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!-- SKETCH 03  .  THREAD DELTA                                        -->
+<!-- ================================================================= -->
+<section class="sketch">
+  <div class="sketch-head">
+    <span><span class="num">03</span> &nbsp; <span class="name">Thread delta</span></span>
+    <span class="gist">A single thread enters on the left. It forks progressively across the canvas, like a river delta. By the right edge it's become a diffuse spread that cannot be reassembled into one thread again.</span>
+  </div>
+  <div class="sketch-copy">
+    <div>
+      <div class="sc-headline">One thread in.<br><span class="dim">Twenty-four threads out. No way back.</span></div>
+      <div class="sc-sub">The gap has a name. <b>Coordination tax.</b></div>
+      <div class="sc-cta">Book a demo ›</div>
+    </div>
+    <div class="sc-badge">You'll recognise it. <b>CAPA still open from last quarter.</b></div>
+  </div>
+  <div class="hero">
+    <svg viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <g class="mono">
+        <text x="80" y="60" class="lbl-caps">ONE THREAD</text>
+        <text x="360" y="60" class="lbl-caps">FORKS</text>
+        <text x="700" y="60" class="lbl-caps">PROLIFERATES</text>
+        <text x="1180" y="60" class="lbl-caps" fill="var(--hot)">CANNOT RECONVERGE</text>
+      </g>
+
+      <!-- Entry pipe -->
+      <g class="mono">
+        <rect x="60" y="332" width="160" height="40" rx="4" fill="none" stroke="rgba(255,255,255,0.5)"/>
+        <circle cx="74" cy="352" r="3.5" fill="rgba(255,255,255,0.95)"/>
+        <text x="86" y="348" class="lbl-tiny">THREAD OPENED</text>
+        <text x="86" y="362" class="lbl-record">CAPA-241</text>
+      </g>
+
+      <!-- Single thread from entry to first fork point -->
+      <line x1="220" y1="352" x2="300" y2="352" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+
+      <!-- Fork 1: 1 → 2 at x=300 -->
+      <g stroke="rgba(255,255,255,0.45)" fill="none" stroke-width="1.5">
+        <path d="M 300,352 C 340,352 360,260 400,260"/>
+        <path d="M 300,352 C 340,352 360,444 400,444"/>
+      </g>
+      <circle cx="300" cy="352" r="3" fill="var(--ink)"/>
+
+      <!-- Thread segments after fork 1 (2 threads from x=400 to x=520) -->
+      <g stroke="rgba(255,255,255,0.4)" fill="none" stroke-width="1.5">
+        <line x1="400" y1="260" x2="520" y2="260"/>
+        <line x1="400" y1="444" x2="520" y2="444"/>
+      </g>
+
+      <!-- Fork 2: 2 → 6 at x=520 -->
+      <g stroke="rgba(255,255,255,0.3)" fill="none">
+        <path d="M 520,260 C 560,260 580,170 620,170"/>
+        <path d="M 520,260 L 620,260"/>
+        <path d="M 520,260 C 560,260 580,340 620,340"/>
+        <path d="M 520,444 C 560,444 580,376 620,376"/>
+        <path d="M 520,444 L 620,444"/>
+        <path d="M 520,444 C 560,444 580,528 620,528"/>
+      </g>
+      <circle cx="520" cy="260" r="2.5" fill="rgba(255,255,255,0.8)"/>
+      <circle cx="520" cy="444" r="2.5" fill="rgba(255,255,255,0.8)"/>
+
+      <!-- 6 threads from x=620 to x=780 -->
+      <g stroke="rgba(255,255,255,0.3)" fill="none">
+        <line x1="620" y1="170" x2="780" y2="170"/>
+        <line x1="620" y1="260" x2="780" y2="260"/>
+        <line x1="620" y1="340" x2="780" y2="340"/>
+        <line x1="620" y1="376" x2="780" y2="376"/>
+        <line x1="620" y1="444" x2="780" y2="444"/>
+        <line x1="620" y1="528" x2="780" y2="528"/>
+      </g>
+
+      <!-- Tool labels on 6 threads (before next fork) -->
+      <g class="mono" font-weight="500">
+        <g transform="translate(632,158)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT</text></g>
+        <g transform="translate(632,248)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · chan</text></g>
+        <g transform="translate(632,328)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · cc</text></g>
+        <g transform="translate(632,364)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · FW</text></g>
+        <g transform="translate(632,432)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · v1</text></g>
+        <g transform="translate(632,516)"><rect width="96" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--meeting)"/><text x="18" y="14" class="lbl-small">MEETING</text></g>
+      </g>
+
+      <!-- Fork 3: 6 → 12 at x=780 -->
+      <g stroke="rgba(255,255,255,0.2)" fill="none">
+        <path d="M 780,170 C 820,170 830,120 870,120"/>
+        <path d="M 780,170 C 820,170 830,200 870,200"/>
+        <path d="M 780,260 C 820,260 830,230 870,230"/>
+        <path d="M 780,260 C 820,260 830,288 870,288"/>
+        <path d="M 780,340 C 820,340 830,318 870,318"/>
+        <path d="M 780,340 C 820,340 830,362 870,362"/>
+        <path d="M 780,376 C 820,376 830,390 870,390"/>
+        <path d="M 780,376 C 820,376 830,420 870,420"/>
+        <path d="M 780,444 C 820,444 830,450 870,450"/>
+        <path d="M 780,444 C 820,444 830,480 870,480"/>
+        <path d="M 780,528 C 820,528 830,510 870,510"/>
+        <path d="M 780,528 C 820,528 830,548 870,548"/>
+      </g>
+
+      <!-- 12 threads from 870 to 1030 -->
+      <g stroke="rgba(255,255,255,0.2)" fill="none">
+        <line x1="870" y1="120" x2="1030" y2="120"/>
+        <line x1="870" y1="200" x2="1030" y2="200"/>
+        <line x1="870" y1="230" x2="1030" y2="230"/>
+        <line x1="870" y1="288" x2="1030" y2="288"/>
+        <line x1="870" y1="318" x2="1030" y2="318"/>
+        <line x1="870" y1="362" x2="1030" y2="362"/>
+        <line x1="870" y1="390" x2="1030" y2="390"/>
+        <line x1="870" y1="420" x2="1030" y2="420"/>
+        <line x1="870" y1="450" x2="1030" y2="450"/>
+        <line x1="870" y1="480" x2="1030" y2="480"/>
+        <line x1="870" y1="510" x2="1030" y2="510"/>
+        <line x1="870" y1="548" x2="1030" y2="548"/>
+      </g>
+
+      <!-- Micro-labels on 12 sub-threads (single small tags) -->
+      <g class="mono" font-weight="500">
+        <g transform="translate(882,108)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--sharepoint)"/><text x="12" y="10" class="lbl-small" font-size="7.5">SHARE·v2</text></g>
+        <g transform="translate(882,188)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--sharepoint)"/><text x="12" y="10" class="lbl-small" font-size="7.5">SHARE·v3</text></g>
+        <g transform="translate(882,218)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--teams)"/><text x="12" y="10" class="lbl-small" font-size="7.5">TEAMS·DM</text></g>
+        <g transform="translate(882,276)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--teams)"/><text x="12" y="10" class="lbl-small" font-size="7.5">TEAMS·@qa</text></g>
+        <g transform="translate(882,306)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·Re²</text></g>
+        <g transform="translate(882,350)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·cc4</text></g>
+        <g transform="translate(882,378)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·FW²</text></g>
+        <g transform="translate(882,408)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--outlook)"/><text x="12" y="10" class="lbl-small" font-size="7.5">OUT·Re³</text></g>
+        <g transform="translate(882,438)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--excel)"/><text x="12" y="10" class="lbl-small" font-size="7.5">EXCEL·v2</text></g>
+        <g transform="translate(882,468)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--excel)"/><text x="12" y="10" class="lbl-small" font-size="7.5">EXCEL·m</text></g>
+        <g transform="translate(882,498)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--meeting)"/><text x="12" y="10" class="lbl-small" font-size="7.5">MEET 30</text></g>
+        <g transform="translate(882,536)"><rect width="72" height="14" rx="2" fill="none" stroke="var(--rule-2)"/><circle cx="6" cy="7" r="1.6" fill="var(--meeting)"/><text x="12" y="10" class="lbl-small" font-size="7.5">MEET 15</text></g>
+      </g>
+
+      <!-- Fork 4: 12 → 24 at x=1030, thin ends -->
+      <g stroke="rgba(255,255,255,0.12)" fill="none">
+        <path d="M 1030,120 L 1190,96"/><path d="M 1030,120 L 1190,138"/>
+        <path d="M 1030,200 L 1190,180"/><path d="M 1030,200 L 1190,220"/>
+        <path d="M 1030,230 L 1190,242"/><path d="M 1030,230 L 1190,260"/>
+        <path d="M 1030,288 L 1190,278"/><path d="M 1030,288 L 1190,300"/>
+        <path d="M 1030,318 L 1190,316"/><path d="M 1030,318 L 1190,336"/>
+        <path d="M 1030,362 L 1190,350"/><path d="M 1030,362 L 1190,372"/>
+        <path d="M 1030,390 L 1190,386"/><path d="M 1030,390 L 1190,406"/>
+        <path d="M 1030,420 L 1190,420"/><path d="M 1030,420 L 1190,440"/>
+        <path d="M 1030,450 L 1190,454"/><path d="M 1030,450 L 1190,474"/>
+        <path d="M 1030,480 L 1190,488"/><path d="M 1030,480 L 1190,508"/>
+        <path d="M 1030,510 L 1190,522"/><path d="M 1030,510 L 1190,540"/>
+        <path d="M 1030,548 L 1190,556"/><path d="M 1030,548 L 1190,576"/>
+      </g>
+
+      <!-- 24 terminals (tiny dots) -->
+      <g fill="rgba(255,255,255,0.5)">
+        <circle cx="1190" cy="96" r="2"/><circle cx="1190" cy="138" r="2"/>
+        <circle cx="1190" cy="180" r="2"/><circle cx="1190" cy="220" r="2"/>
+        <circle cx="1190" cy="242" r="2"/><circle cx="1190" cy="260" r="2"/>
+        <circle cx="1190" cy="278" r="2"/><circle cx="1190" cy="300" r="2"/>
+        <circle cx="1190" cy="316" r="2"/><circle cx="1190" cy="336" r="2"/>
+        <circle cx="1190" cy="350" r="2"/><circle cx="1190" cy="372" r="2"/>
+        <circle cx="1190" cy="386" r="2"/><circle cx="1190" cy="406" r="2"/>
+        <circle cx="1190" cy="420" r="2"/><circle cx="1190" cy="440" r="2"/>
+        <circle cx="1190" cy="454" r="2"/><circle cx="1190" cy="474" r="2"/>
+        <circle cx="1190" cy="488" r="2"/><circle cx="1190" cy="508" r="2"/>
+        <circle cx="1190" cy="522" r="2"/><circle cx="1190" cy="540" r="2"/>
+        <circle cx="1190" cy="556" r="2"/><circle cx="1190" cy="576" r="2"/>
+      </g>
+
+      <!-- Closure (attempt to reconverge) -->
+      <g class="mono">
+        <rect x="1244" y="316" width="152" height="72" rx="6" fill="none" stroke="var(--hot-dim)" stroke-dasharray="4 4"/>
+        <text x="1258" y="336" class="lbl-caps" fill="var(--hot)">CLOSURE</text>
+        <text x="1258" y="360" fill="var(--hot)" font-family="JetBrains Mono, monospace" font-size="16" font-weight="500">12 / 24</text>
+        <text x="1258" y="378" class="lbl-small" fill="var(--ink-3)" font-size="10">threads referenced</text>
+      </g>
+
+      <!-- Some terminals reach closure, others don't -->
+      <g stroke="var(--hot-dim)" stroke-dasharray="2 3" fill="none">
+        <path d="M 1192,336 L 1244,340"/>
+        <path d="M 1192,350 L 1244,346"/>
+        <path d="M 1192,372 L 1244,360"/>
+        <path d="M 1192,386 L 1244,366"/>
+        <path d="M 1192,406 L 1244,374"/>
+      </g>
+    </svg>
+  </div>
+  <div class="notes">
+    <div><h4>5-second read</h4><p>A river delta seen from above. One stream entering, twenty-four streams exiting. The closure box on the right can only reach twelve. The rest simply run off the edge.</p></div>
+    <div><h4>Animation hook</h4><p>Single thread draws in from the left. At each fork point, the line visibly splits and new branches extend. After the fourth fork, terminals twinkle to life. The closure box wakes up and five pull-lines reach toward nearby terminals. Counter settles at 12 / 24.</p></div>
+    <div><h4>Risks</h4><p>Closest risk to "chart" territory. Mitigate with irregular vertical spacing and tool-tinted dots so it reads as coordination, not data. The delta metaphor is less obvious than iceberg or tree, may need one line of ground-truth copy to land.</p></div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!-- SKETCH 04  .  CLOSURE MAGNET                                      -->
+<!-- ================================================================= -->
+<section class="sketch">
+  <div class="sketch-head">
+    <span><span class="num">04</span> &nbsp; <span class="name">Closure magnet</span></span>
+    <span class="gist">Inverse framing. Closure node on the right is the star. Fragments are scattered across the canvas. Magnetic pull lines show what it can reach. Orphans grey out.</span>
+  </div>
+  <div class="sketch-copy">
+    <div>
+      <div class="sc-headline">Closure needs everything.<br><span class="dim">Fourteen pieces never come back.</span></div>
+      <div class="sc-sub">The gap has a name. <b>Coordination tax.</b></div>
+      <div class="sc-cta">Book a demo ›</div>
+    </div>
+    <div class="sc-badge">You'll recognise it. <b>CAPA still open from last quarter.</b></div>
+  </div>
+  <div class="hero">
+    <svg viewBox="0 0 1440 700" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <g class="mono">
+        <text x="80" y="60" class="lbl-caps">A WEEK AGO · CAPA-241 OPENED</text>
+        <text x="900" y="60" class="lbl-caps" fill="var(--hot)">TODAY · REASSEMBLY FOR CLOSURE</text>
+      </g>
+
+      <!-- Small entry indicator -->
+      <g class="mono">
+        <circle cx="96" cy="110" r="4" fill="rgba(255,255,255,0.7)"/>
+        <text x="110" y="114" class="lbl-small">CAPA-241 opened</text>
+      </g>
+
+      <!-- Big closure node on the right -->
+      <g class="mono">
+        <rect x="900" y="220" width="440" height="260" rx="8" fill="none" stroke="var(--hot)" stroke-width="1.5"/>
+        <text x="922" y="250" class="lbl-caps" fill="var(--hot)" font-size="10">CLOSURE REQUIRED</text>
+        <line x1="922" y1="260" x2="1320" y2="260" stroke="var(--rule-2)"/>
+
+        <text x="922" y="288" class="lbl-record" font-size="14">CAPA-241</text>
+        <text x="922" y="306" class="lbl-small" fill="var(--ink-2)" font-size="11">Needs: evidence, approvals, signatures</text>
+
+        <!-- Reassembly status -->
+        <g>
+          <text x="922" y="348" class="lbl-caps" font-size="10">STATUS</text>
+          <text x="922" y="378" fill="var(--ink)" font-family="JetBrains Mono, monospace" font-size="32" font-weight="500">28</text>
+          <text x="980" y="378" fill="var(--ink-3)" font-size="13">of 42 linked</text>
+
+          <text x="922" y="410" class="lbl-caps" font-size="10" fill="var(--hot)">ORPHANED</text>
+          <text x="922" y="440" fill="var(--hot)" font-family="JetBrains Mono, monospace" font-size="32" font-weight="500">14</text>
+          <text x="980" y="440" fill="var(--ink-3)" font-size="13">fragments never linked</text>
+        </g>
+
+        <text x="922" y="466" class="lbl-small" fill="var(--ink-3)" font-size="10">Blocked · 14 days over SLA</text>
+      </g>
+
+      <!-- Scattered fragments on the left half (linked: full opacity, orphaned: low opacity) -->
+      <g class="mono" font-weight="500">
+        <!-- Linked (will have pull lines) -->
+        <g transform="translate(90,160)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · Re</text></g>
+        <g transform="translate(220,200)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · thr</text></g>
+        <g transform="translate(380,180)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT v2</text></g>
+        <g transform="translate(540,210)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · FIN</text></g>
+        <g transform="translate(140,260)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · FW</text></g>
+        <g transform="translate(300,270)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--meeting)"/><text x="18" y="14" class="lbl-small">MEETING 45m</text></g>
+        <g transform="translate(480,290)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT v4</text></g>
+        <g transform="translate(640,260)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · @qa</text></g>
+        <g transform="translate(100,340)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · merge</text></g>
+        <g transform="translate(260,350)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · cc</text></g>
+        <g transform="translate(420,370)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · DM</text></g>
+        <g transform="translate(600,350)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT v6</text></g>
+        <g transform="translate(180,430)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--meeting)"/><text x="18" y="14" class="lbl-small">MEETING 30m</text></g>
+        <g transform="translate(360,440)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · v3</text></g>
+        <g transform="translate(540,430)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · Re²</text></g>
+        <g transform="translate(700,420)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT FIN</text></g>
+        <g transform="translate(120,510)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · fork</text></g>
+        <g transform="translate(280,520)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · Re³</text></g>
+        <g transform="translate(460,510)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · audit</text></g>
+        <g transform="translate(620,520)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--meeting)"/><text x="18" y="14" class="lbl-small">MEETING 25m</text></g>
+        <g transform="translate(200,590)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--sharepoint)"/><text x="18" y="14" class="lbl-small">SHAREPOINT v8</text></g>
+        <g transform="translate(380,600)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--outlook)"/><text x="18" y="14" class="lbl-small">OUTLOOK · CC</text></g>
+        <g transform="translate(560,590)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--teams)"/><text x="18" y="14" class="lbl-small">TEAMS · ping</text></g>
+        <g transform="translate(720,600)"><rect width="100" height="22" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="9" cy="11" r="2" fill="var(--excel)"/><text x="18" y="14" class="lbl-small">EXCEL · v5</text></g>
+
+        <!-- Orphaned (greyed, floating at edges, no pull line) -->
+        <g opacity="0.3">
+          <g transform="translate(60,100)"><rect width="96" height="20" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="10" r="1.8" fill="var(--outlook)"/><text x="15" y="13" class="lbl-small">OUT · lost</text></g>
+          <g transform="translate(60,660)"><rect width="96" height="20" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="10" r="1.8" fill="var(--teams)"/><text x="15" y="13" class="lbl-small">TEAMS · DM</text></g>
+          <g transform="translate(860,120)"><rect width="96" height="20" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="10" r="1.8" fill="var(--meeting)"/><text x="15" y="13" class="lbl-small">MEETING off</text></g>
+          <g transform="translate(860,620)"><rect width="96" height="20" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="10" r="1.8" fill="var(--meeting)"/><text x="15" y="13" class="lbl-small">MEETING 15m</text></g>
+          <g transform="translate(820,560)"><rect width="96" height="20" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="10" r="1.8" fill="var(--sharepoint)"/><text x="15" y="13" class="lbl-small">SHARE · v9</text></g>
+          <g transform="translate(820,160)"><rect width="96" height="20" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="10" r="1.8" fill="var(--excel)"/><text x="15" y="13" class="lbl-small">EXCEL · v6</text></g>
+          <g transform="translate(60,220)"><rect width="96" height="20" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="10" r="1.8" fill="var(--outlook)"/><text x="15" y="13" class="lbl-small">OUT · bounced</text></g>
+          <g transform="translate(60,490)"><rect width="96" height="20" rx="3" fill="none" stroke="var(--rule-2)"/><circle cx="8" cy="10" r="1.8" fill="var(--sharepoint)"/><text x="15" y="13" class="lbl-small">SHARE · v7</text></g>
+        </g>
+      </g>
+
+      <!-- Magnetic pull lines from closure node to linked fragments -->
+      <g stroke="var(--hot-dim)" stroke-dasharray="3 3" fill="none" opacity="0.65">
+        <path d="M 900,280 Q 700,200 540,220"/>
+        <path d="M 900,290 Q 700,230 480,291"/>
+        <path d="M 900,310 Q 700,280 700,271"/>
+        <path d="M 900,330 Q 750,310 640,260"/>
+        <path d="M 900,350 Q 760,360 700,360"/>
+        <path d="M 900,360 Q 770,420 700,430"/>
+        <path d="M 900,380 Q 770,450 640,442"/>
+        <path d="M 900,400 Q 760,500 700,430"/>
+        <path d="M 900,420 Q 760,520 720,520"/>
+        <path d="M 900,440 Q 750,580 720,611"/>
+      </g>
+
+      <!-- Orphan indicator (small ghost labels near orphaned cards) -->
+      <g class="mono" fill="var(--hot-dim)">
+        <text x="60" y="94" class="lbl-tiny">ORPHAN</text>
+        <text x="60" y="214" class="lbl-tiny">ORPHAN</text>
+        <text x="60" y="484" class="lbl-tiny">ORPHAN</text>
+        <text x="60" y="654" class="lbl-tiny">ORPHAN</text>
+        <text x="860" y="114" class="lbl-tiny">ORPHAN</text>
+        <text x="860" y="154" class="lbl-tiny">ORPHAN</text>
+        <text x="820" y="554" class="lbl-tiny">ORPHAN</text>
+        <text x="860" y="614" class="lbl-tiny">ORPHAN</text>
+      </g>
+    </svg>
+  </div>
+  <div class="notes">
+    <div><h4>5-second read</h4><p>A big closure card on the right, with hard numbers. Fragments on the left, most of them magnetically linked. Grey cards floating at the edges labelled ORPHAN. 14 of 42 never came back.</p></div>
+    <div><h4>Animation hook</h4><p>Closure card appears first, numbers both at zero. Fragments materialise across the canvas in a soft cascade. Magnetic lines pulse outward from closure, latching onto reachable fragments while the linked count ticks up. Orphans briefly flash, then fade to grey. Final state settles at 28 linked, 14 orphan.</p></div>
+    <div><h4>Risks</h4><p>Leans on the orphan label to carry meaning. Without it the grey cards look like "just more cards." Label must stay on. This is also the most CFO-friendly of the four sketches because the numbers are the focal point, which may or may not be what Ben wants for the hero.</p></div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!-- META / NEXT STEPS                                                 -->
+<!-- ================================================================= -->
+<div class="meta-foot">
+  <h3>Design language rules these sketches follow</h3>
+  <ul>
+    <li>Same node vocabulary as linear-flow, Direction D, and Direction B. Rounded-rect cards, thin borders, monospace labels. Consistency across the four explorations is intentional.</li>
+    <li>Tools shown: SharePoint, Teams, Outlook, Excel, Meeting. Microsoft-stack only, per Ben's call on 2026-04-22.</li>
+    <li>No blue anywhere. Blue is reserved for the Unifize platform layer that arrives in E2.</li>
+    <li>Hot accent (orange-red) used only for closure boxes, orphan counts, and "reassemble?" states. Earns its weight by being rare.</li>
+    <li>No em dashes in any label. Periods, middle dots, and commas only.</li>
+    <li>Five-second rule: each sketch should land "explosion plus failed reassembly" before any body copy is read.</li>
+    <li>Same sample event as the other explorations (CAPA-241) so the family reads as one system.</li>
+  </ul>
+  <h3>Suggested short list</h3>
+  <ul>
+    <li><b>01 Fountain explosion</b>: the most visceral. Physical feeling of a thing bursting apart. Best if we want the hero to "hurt."</li>
+    <li><b>02 Branching tree</b>: the most quantifiable. 1 to 5 to 15 to 30 is a chant a CFO can read. Use as the hero if the story is "scale of the problem."</li>
+    <li><b>03 Thread delta</b>: the most elegant metaphor. Risk: most chart-like. Use as a mid-scroll section, not a hero.</li>
+    <li><b>04 Closure magnet</b>: the most CFO-friendly. Orphan count is the proof artifact. Pairs well as a second section after 01 or 02 to quantify what they just felt.</li>
+  </ul>
+  <h3>Open questions before we pick one</h3>
+  <ul>
+    <li>Does the brief's "governed thread as alternative path" belong here (violating Ben's E1 constraint) or does it stay in E2 as originally locked? Default here is E2.</li>
+    <li>For the numbers (5 above, 30 leaves, 24 threads, 42 fragments, 14 orphans): are any of these defensible? If one of these reaches the homepage, it needs a citation, not a placeholder.</li>
+    <li>Do we lean into the closure-failure frame (Sketch 04) or the explosion frame (Sketch 01) as the E1 hero? They answer different questions: "what happened?" vs. "what does it cost you?"</li>
+  </ul>
+</div>
+
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof gsap === 'undefined') return;
+
+  const sketches = document.querySelectorAll('.sketch');
+  
+  // Setup SVGs to hidden initial state
+  const s1 = sketches[0].querySelector('svg');
+  const s2 = sketches[1].querySelector('svg');
+  const s3 = sketches[2].querySelector('svg');
+  const s4 = sketches[3].querySelector('svg');
+
+  const getKids = (svg) => Array.from(svg.querySelectorAll(':scope > g, :scope > line, :scope > circle, :scope > path'));
+
+  const s1Nodes = getKids(s1);
+  const s2Nodes = getKids(s2);
+  const s3Nodes = getKids(s3);
+  const s4Nodes = getKids(s4);
+
+  // S1 INIT
+  gsap.set([s1Nodes[1], s1Nodes[2], s1Nodes[3], s1Nodes[4], s1Nodes[5], s1Nodes[6], s1Nodes[7], s1Nodes[8], s1Nodes[9], s1Nodes[10], s1Nodes[11], s1Nodes[12]], { opacity: 0, x: -15 });
+
+  // S2 INIT
+  gsap.set([s2Nodes[1], s2Nodes[2], s2Nodes[3], s2Nodes[4], s2Nodes[5], s2Nodes[6], s2Nodes[7], s2Nodes[8], s2Nodes[9]], { opacity: 0, x: -15 });
+  
+  // S3 INIT
+  gsap.set(s3Nodes.slice(1), { opacity: 0, x: -15 });
+
+  // S4 INIT
+  gsap.set(s4Nodes.slice(1), { opacity: 0, y: 15 });
+  
+  // Make S4 orphans start hidden
+  if (s4Nodes[3]) {
+    const fragments = Array.from(s4Nodes[3].children);
+    gsap.set(fragments.pop(), { opacity: 0 });
+    gsap.set(fragments, { opacity: 0 });
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        let index = Array.from(sketches).indexOf(entry.target);
+        if (index === 0) playS1();
+        if (index === 1) playS2();
+        if (index === 2) playS3();
+        if (index === 3) playS4();
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.35 });
+
+  sketches.forEach(s => observer.observe(s));
+
+  function playS1() {
+    const tl = gsap.timeline({ defaults: { duration: 0.8, ease: "power2.out" } });
+    tl.to(s1Nodes[1], { opacity: 1, x: 0 })
+      .to(s1Nodes[2], { opacity: 1, x: 0 }, "+=0.1")
+      .to(s1Nodes[3], { opacity: 1, x: 0 }, "+=0.1")
+      .to(s1Nodes[4], { opacity: 1, x: 0 })
+      .to([s1Nodes[5], s1Nodes[6], s1Nodes[7], s1Nodes[8], s1Nodes[9]], { opacity: 1, x: 0, stagger: 0.08 }, "-=0.4")
+      .to(s1Nodes[10], { opacity: 1, x: 0 }, "+=0.2")
+      .to(s1Nodes[11], { opacity: 0.6, x: 0 }, "+=0.2")
+      .to(s1Nodes[12], { opacity: 1, x: 0 }, "+=0.2");
+      
+    // Pulse animation
+    const ring = s1Nodes[2].querySelector('circle:nth-child(2)');
+    if (ring) {
+      gsap.to(ring, { scale: 1.3, opacity: 0, duration: 1.2, ease: "power1.out", transformOrigin: "center", delay: 1.2 });
+    }
+  }
+
+  function playS2() {
+    const tl = gsap.timeline({ defaults: { duration: 0.7, ease: "power2.out" } });
+    tl.to(s2Nodes[1], { opacity: 1, x: 0 })
+      .to(s2Nodes[2], { opacity: 1, x: 0 }, "+=0.1")
+      .to(s2Nodes[3], { opacity: 1, x: 0 }, "-=0.4")
+      .to(s2Nodes[4], { opacity: 1, x: 0 }, "+=0.1")
+      .to(s2Nodes[5], { opacity: 1, x: 0 }, "-=0.4")
+      .to(s2Nodes[6], { opacity: 1, x: 0 }, "+=0.1")
+      .to(s2Nodes[7], { opacity: 1, x: 0 }, "-=0.4")
+      .to(s2Nodes[8], { opacity: 1, x: 0 }, "+=0.3")
+      .to(s2Nodes[9], { opacity: 0.5, x: 0 }, "+=0.2");
+  }
+
+  function playS3() {
+    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power1.inOut" } });
+    tl.to(s3Nodes[1], { opacity: 1, x: 0 })
+      .to(s3Nodes[2], { opacity: 1, x: 0 }, "-=0.2")
+      .to([s3Nodes[3], s3Nodes[4]], { opacity: 1, x: 0 }, "-=0.1")
+      .to(s3Nodes[5], { opacity: 1, x: 0 }, "-=0.2")
+      .to([s3Nodes[6], s3Nodes[7], s3Nodes[8]], { opacity: 1, x: 0 }, "-=0.1")
+      .to([s3Nodes[9], s3Nodes[10]], { opacity: 1, x: 0 }, "-=0.2")
+      .to(s3Nodes[11], { opacity: 1, x: 0 }, "-=0.1")
+      .to([s3Nodes[12], s3Nodes[13]], { opacity: 1, x: 0 }, "-=0.2")
+      .to(s3Nodes[14], { opacity: 1, x: 0 }, "-=0.1")
+      .to(s3Nodes[15], { opacity: 1, x: 0 }, "-=0.2")
+      .to(s3Nodes[16], { opacity: 1, x: 0 }, "+=0.3")
+      .to(s3Nodes[17], { opacity: 1, x: 0 }, "+=0.2");
+  }
+
+  function playS4() {
+    const tl = gsap.timeline({ defaults: { duration: 0.8, ease: "power2.out" } });
+    const fragments = Array.from(s4Nodes[3].children);
+    const orphans = fragments.pop();
+    const linked = fragments;
+    
+    tl.to(s4Nodes[2], { opacity: 1, y: 0 })
+      .to(s4Nodes[1], { opacity: 1, y: 0 }, "+=0.2")
+      .to(linked, { opacity: 1, y: 0, stagger: 0.04 }, "+=0.1")
+      .to(s4Nodes[4], { opacity: 0.65, y: 0 }, "+=0.2")
+      .to(orphans, { opacity: 0.8, y: 0, duration: 0.4 }, "+=0.1")
+      .to(orphans, { opacity: 0.3, duration: 0.4 })
+      .to(s4Nodes[5], { opacity: 1, y: 0 }, "-=0.2");
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Concept Exploration 1 — Six Distinct Paradigms</title>
+<style>
+  :root {
+    --bg: #08090d;
+    --ink: #d8d8e0;
+    --line: rgba(255,255,255,0.07);
+    --panel-line: rgba(255,255,255,0.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.head {
+    position: sticky; top: 0; z-index: 10;
+    padding: 12px 28px 10px;
+    font-size: 10.5px; letter-spacing: 0.1em;
+    background: rgba(8,9,13,0.92);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  header.head .tag { color: #6e6e78; }
+  header.head .toc { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 6px; }
+  header.head .toc a { color: #50505a; text-decoration: none; transition: color 0.15s; }
+  header.head .toc a:hover { color: var(--ink); }
+  section.concept {
+    padding: 8vh 4vw 5vh;
+    display: flex; flex-direction: column;
+    border-bottom: 1px solid var(--line);
+  }
+  .title {
+    font-size: 10.5px; letter-spacing: 0.22em;
+    color: #8c8c94;
+    margin: 0 0 2vh;
+    text-transform: uppercase;
+  }
+  .title .num { color: #3a3a42; margin-right: 18px; }
+  .title .sub { color: #555; margin-left: 12px; font-size: 9.5px; letter-spacing: 0.18em; }
+  .strip { width: 100%; max-width: 1280px; margin: 0 auto; }
+  .strip svg { width: 100%; height: auto; display: block; }
+  .panel-frame { stroke: var(--panel-line); fill: none; stroke-width: 0.6; }
+  .panel-num { fill: #2c2c34; font-size: 11px; letter-spacing: 0.12em; font-family: ui-monospace, monospace; }
+  .panel-label { fill: #4a4a52; font-size: 9.5px; letter-spacing: 0.14em; font-family: ui-monospace, monospace; }
+  .lbl-record { font-family: ui-monospace, monospace; font-size: 7.5px; letter-spacing: 0.12em; fill: rgba(255,255,255,0.62); }
+  .lbl-card-title { font-family: ui-monospace, monospace; font-size: 7px; fill: rgba(255,255,255,0.92); font-weight: 600; }
+  .lbl-card-meta { font-family: ui-monospace, monospace; font-size: 6px; fill: rgba(255,255,255,0.55); }
+  .lbl-frustration { font-family: ui-monospace, monospace; font-size: 6.5px; letter-spacing: 0.08em; fill: rgba(255,255,255,0.72); }
+  .ui-cost-label { font-family: ui-monospace, monospace; font-size: 8px; letter-spacing: 0.15em; fill: #777; }
+  .ui-cost-value { font-family: ui-monospace, monospace; font-size: 14px; fill: rgba(255,255,255,0.95); font-weight: 700; }
+  .ui-cost-delta { font-family: ui-monospace, monospace; font-size: 9px; fill: #d8635a; }
+  .ui-cost-driver { font-family: ui-monospace, monospace; font-size: 7px; fill: rgba(255,255,255,0.65); }
+  .ui-legend-label { font-family: ui-monospace, monospace; font-size: 7.5px; letter-spacing: 0.12em; fill: rgba(255,255,255,0.75); }
+  .ui-legend-sub { font-family: ui-monospace, monospace; font-size: 6.5px; fill: rgba(255,255,255,0.40); }
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div><span class="tag">CONCEPT EXPLORATION 1 / SIX DISTINCT PARADIGMS — UNIFIZE IS THE GOVERNING LAYER (works alongside SoR & SoC, does not replace them)</span></div>
+  <div class="toc" id="toc"></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+(() => {
+  // ──────────────────────────────────────────────────────
+  // CAMERA — standard iso pose with optional look-target shift.
+  // All panels at iso elevation; only look-target / scale vary.
+  // ──────────────────────────────────────────────────────
+  function makeCam(opts) {
+    const az = (opts.az ?? 32) * Math.PI / 180;
+    const el = (opts.el ?? 35.264) * Math.PI / 180;
+    const scale = opts.scale ?? 14;
+    const cx = opts.cx ?? 0, cy = opts.cy ?? 0;
+    const lx = opts.lookX ?? 0, ly = opts.lookY ?? 0, lz = opts.lookZ ?? 0;
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const ce = Math.cos(el), se = Math.sin(el);
+    return (x, y, z) => {
+      const X = x - lx, Y = y - ly, Z = z - lz;
+      const sx = ca * X - sa * Z;
+      const depth = sa * X + ca * Z;
+      const sy = depth * se - Y * ce;
+      return [cx + sx * scale, cy + sy * scale];
+    };
+  }
+
+  const NS = (n, a, p) => {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', n);
+    if (a) for (const [k, v] of Object.entries(a)) e.setAttribute(k, v);
+    if (p) p.appendChild(e);
+    return e;
+  };
+  const pts = (arr) => arr.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
+
+  // ──────────────────────────────────────────────────────
+  // PALETTES
+  // ──────────────────────────────────────────────────────
+  const SoR = { top: '#3D4049', right: '#1C1E25', front: '#2A2D35', stroke: 'rgba(255,255,255,0.22)' };
+  const SoC = { top: '#2A2C34', right: '#0F1116', front: '#1B1D24', stroke: 'rgba(255,255,255,0.22)' };
+  const SoC_DESK = { top: '#363842', right: '#1A1C24', front: '#23262F', stroke: 'rgba(255,255,255,0.22)' };
+  const UNI = { top: '#3D7AFF', right: '#0040C9', front: '#1A5AFF', stroke: 'rgba(255,255,255,0.32)' };
+  const UNI_DEEP = { top: '#1A2A55', right: '#0A1228', front: '#101F40', stroke: 'rgba(125,150,255,0.35)' };
+  const UNI_GLOW = { top: '#5F92FF', right: '#1A5AFF', front: '#3D7AFF', stroke: 'rgba(255,255,255,0.40)' };
+  const CREAM = { top: '#E8D8B0', right: '#8C7748', front: '#B59E68', stroke: 'rgba(120,90,40,0.40)' };
+
+  const FRAG = [
+    { top: '#F0C84A', right: '#9D7A1F', front: '#C49C2E', stroke: 'rgba(120,90,30,0.4)' },
+    { top: '#6BB07C', right: '#2E5A38', front: '#4A8253', stroke: 'rgba(40,80,50,0.4)' },
+    { top: '#7AA0E0', right: '#2E4D8A', front: '#4D72B8', stroke: 'rgba(40,60,120,0.4)' },
+    { top: '#D8635A', right: '#7A2B25', front: '#A8413A', stroke: 'rgba(110,40,30,0.4)' },
+  ];
+
+  // ──────────────────────────────────────────────────────
+  // ISO BG GRID PATTERN  (subtle diamond pattern — "iso paper")
+  // Added once to the parent SVG via <defs>; each panel references it.
+  // ──────────────────────────────────────────────────────
+  function addIsoGridPattern(svg, id) {
+    const defs = NS('defs', null, svg);
+    // pattern unit = a diamond of width 60, height 34.64 (= 60 * tan 30)
+    const W = 60, H = 60 * Math.tan(Math.PI / 6);
+    const pat = NS('pattern', {
+      id, patternUnits: 'userSpaceOnUse', width: W, height: H,
+    }, defs);
+    NS('rect', { x: 0, y: 0, width: W, height: H, fill: '#08090d' }, pat);
+    // diagonals at +30° and -30°
+    NS('line', { x1: 0, y1: H, x2: W, y2: 0, stroke: 'rgba(255,255,255,0.035)', 'stroke-width': 0.5 }, pat);
+    NS('line', { x1: 0, y1: 0, x2: W, y2: H, stroke: 'rgba(255,255,255,0.035)', 'stroke-width': 0.5 }, pat);
+    // a second row offset for tighter diamond
+    NS('line', { x1: 0, y1: H/2, x2: W/2, y2: 0, stroke: 'rgba(125,150,255,0.025)', 'stroke-width': 0.4 }, pat);
+    NS('line', { x1: W/2, y1: 0, x2: W, y2: H/2, stroke: 'rgba(125,150,255,0.025)', 'stroke-width': 0.4 }, pat);
+    NS('line', { x1: 0, y1: H/2, x2: W/2, y2: H, stroke: 'rgba(125,150,255,0.025)', 'stroke-width': 0.4 }, pat);
+    NS('line', { x1: W/2, y1: H, x2: W, y2: H/2, stroke: 'rgba(125,150,255,0.025)', 'stroke-width': 0.4 }, pat);
+    return id;
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PRIMITIVES — iso cuboid, optional rotation
+  // ──────────────────────────────────────────────────────
+  function isoCube(parent, cam, x, y, z, w, h, d, palette, rotate = 0) {
+    const hw = w / 2, hd = d / 2;
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const rot = (lx, lz) => [x + lx * cosR - lz * sinR, z + lx * sinR + lz * cosR];
+    const C = (lx, ly, lz) => {
+      const [wx, wz] = rot(lx, lz);
+      return cam(wx, y + ly, wz);
+    };
+    const A = C(-hw, 0, -hd), B = C(hw, 0, -hd), Cc = C(hw, 0, hd), D = C(-hw, 0, hd);
+    const E = C(-hw, h, -hd), F = C(hw, h, -hd), G = C(hw, h, hd), H = C(-hw, h, hd);
+    NS('polygon', { points: pts([E, F, G, H]), fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    NS('polygon', { points: pts([D, Cc, G, H]), fill: palette.front, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    NS('polygon', { points: pts([Cc, B, F, G]), fill: palette.right, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+  }
+
+  // Iso floor grid lines at y=0 (the actual scene floor)
+  function isoFloor(parent, cam, half = 14, div = 14, opacity = 0.4) {
+    const g = NS('g', { opacity }, parent);
+    const step = (half * 2) / div;
+    for (let i = 0; i <= div; i++) {
+      const t = -half + i * step;
+      const a = cam(-half, 0, t), b = cam(half, 0, t);
+      NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(255,255,255,0.05)', 'stroke-width': 0.4 }, g);
+      const c = cam(t, 0, -half), d = cam(t, 0, half);
+      NS('line', { x1: c[0], y1: c[1], x2: d[0], y2: d[1], stroke: 'rgba(255,255,255,0.05)', 'stroke-width': 0.4 }, g);
+    }
+  }
+
+  function mulberry32(seed) {
+    let t = seed;
+    return function () {
+      t = (t + 0x6D2B79F5) >>> 0;
+      let x = t;
+      x = Math.imul(x ^ (x >>> 15), x | 1);
+      x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ──────────────────────────────────────────────────────
+  // VOCABULARY
+  // ──────────────────────────────────────────────────────
+
+  // SoR cluster — 8 small graphite cubes, each labeled (QMS/ERP/PLM/MES/LIMS/EHS/DMS/CAPA)
+  // arranged in a 2-row × 4-col grid on a thin plinth
+  function drawSoRCluster(parent, cam, anchor) {
+    const labels = [
+      ['QMS', 'ERP', 'PLM', 'MES'],
+      ['LIMS', 'EHS', 'DMS', 'CAPA'],
+    ];
+    const cw = 1.5, ch = 1.2, gap = 0.2;
+    const cols = 4, rows = 2;
+    const totalW = cols * cw + (cols - 1) * gap;
+    const totalD = rows * cw + (rows - 1) * gap;
+    // plinth
+    isoCube(parent, cam, anchor.x, 0, anchor.z, totalW + 0.6, 0.20, totalD + 0.6, { top: '#15171c', right: '#08090d', front: '#0e1015', stroke: 'rgba(255,255,255,0.18)' });
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = anchor.x + (c - (cols - 1) / 2) * (cw + gap);
+        const z = anchor.z + (r - (rows - 1) / 2) * (cw + gap);
+        isoCube(parent, cam, x, 0.20, z, cw, ch, cw, SoR);
+        // tiny 4-dot glyph on top
+        const [gx, gy] = cam(x, 0.20 + ch + 0.01, z);
+        const ds = 1.8;
+        for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) {
+          NS('rect', {
+            x: gx - ds * 1.4 + dx * ds * 1.4 - ds / 2,
+            y: gy - ds * 1.4 + dy * ds * 1.4 - ds / 2,
+            width: ds, height: ds, fill: 'rgba(255,255,255,0.40)',
+          }, parent);
+        }
+        // small label below glyph
+        const [lx, ly] = cam(x, 0.20 + ch + 0.04, z + cw / 2 - 0.1);
+        NS('text', { x: lx, y: ly + 8, 'text-anchor': 'middle', class: 'lbl-record' }, parent).textContent = labels[r][c];
+      }
+    }
+  }
+
+  // SoC hexagonal table with 6 desks + people around the perimeter
+  function drawHexTableSoC(parent, cam, anchor, opts = {}) {
+    const r = opts.r ?? 3.0;
+    const tableH = 0.30;
+    // Draw hex prism top + side faces by triangulating
+    const top = [];
+    const bot = [];
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      const wx = anchor.x + Math.cos(ang) * r;
+      const wz = anchor.z + Math.sin(ang) * r;
+      top.push(cam(wx, tableH, wz));
+      bot.push(cam(wx, 0, wz));
+    }
+    // Sides (each is a quad: bot[i], bot[i+1], top[i+1], top[i])
+    for (let i = 0; i < 6; i++) {
+      const j = (i + 1) % 6;
+      NS('polygon', { points: pts([bot[i], bot[j], top[j], top[i]]), fill: SoC.front, stroke: SoC.stroke, 'stroke-width': 0.7 }, parent);
+    }
+    // Top hex (single polygon)
+    NS('polygon', { points: pts(top), fill: SoC.top, stroke: SoC.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+
+    // 6 desks + people around the perimeter
+    if (opts.peopleCount !== 0) {
+      const ppl = opts.peopleCount ?? 6;
+      for (let i = 0; i < ppl; i++) {
+        const ang = (i / 6) * Math.PI * 2 + Math.PI / 6;
+        const deskR = r + 0.85;
+        const wx = anchor.x + Math.cos(ang) * deskR;
+        const wz = anchor.z + Math.sin(ang) * deskR;
+        // desk (small)
+        isoCube(parent, cam, wx, 0, wz, 0.55, 0.35, 0.40, SoC_DESK, -ang * 180 / Math.PI + 90);
+        // human silhouette behind the desk (slightly further out)
+        const px = anchor.x + Math.cos(ang) * (deskR + 0.45);
+        const pz = anchor.z + Math.sin(ang) * (deskR + 0.45);
+        drawHuman(parent, cam, px, pz, 0.75);
+      }
+    }
+  }
+
+  function drawHuman(parent, cam, x, z, height = 0.75) {
+    const head = cam(x, height, z);
+    const sh = cam(x, height * 0.78, z);
+    const base = cam(x, height * 0.35, z);
+    NS('circle', { cx: head[0], cy: head[1], r: 3, fill: '#3a3a44', stroke: 'rgba(255,255,255,0.22)', 'stroke-width': 0.5 }, parent);
+    NS('path', {
+      d: `M${sh[0] - 4.5},${sh[1]} Q${sh[0]},${sh[1] - 4.5} ${sh[0] + 4.5},${sh[1]} L${base[0] + 3.5},${base[1]} L${base[0] - 3.5},${base[1]} Z`,
+      fill: '#252530', stroke: 'rgba(255,255,255,0.20)', 'stroke-width': 0.5,
+    }, parent);
+  }
+
+  // Unifize platform — large chamfered blue pedestal in iso
+  // Optionally with work cards on top.
+  function drawUnifizePlatform(parent, cam, anchor, opts = {}) {
+    const w = opts.w ?? 6.5;
+    const h = opts.h ?? 1.2;
+    const d = opts.d ?? 4.5;
+    // Inner deep band (a darker volume underneath)
+    isoCube(parent, cam, anchor.x, anchor.y - 0.05, anchor.z, w + 0.4, 0.10, d + 0.4, UNI_DEEP);
+    // Main blue platform
+    isoCube(parent, cam, anchor.x, anchor.y, anchor.z, w, h, d, UNI);
+    // "unifize" stamp on the front face — small inline mark, no text required
+    // (We rely on the unique blue palette to identify Unifize.)
+  }
+
+  // A flat work card resting on top of Unifize
+  function drawWorkCard(parent, cam, x, y, z, name, status, ownerInit) {
+    const cw = 1.1, ch = 0.10, cd = 1.4;
+    // card body — cream-white
+    isoCube(parent, cam, x, y, z, cw, ch, cd, { top: '#f4f1e6', right: '#bdb89e', front: '#d8d2b8', stroke: 'rgba(80,70,50,0.35)' });
+    // Title text on top face
+    const [tx, ty] = cam(x, y + ch + 0.01, z - cd / 2 + 0.25);
+    NS('text', { x: tx, y: ty + 5, 'text-anchor': 'middle', class: 'lbl-card-title', fill: '#1a1a22' }, parent).textContent = name;
+    // Owner row
+    const [ox, oy] = cam(x, y + ch + 0.01, z);
+    NS('text', { x: ox, y: oy + 4, 'text-anchor': 'middle', class: 'lbl-card-meta', fill: '#454552' }, parent).textContent = 'Owner';
+    // Owner avatar (small circle)
+    const [ax, ay] = cam(x, y + ch + 0.02, z + 0.18);
+    NS('circle', { cx: ax, cy: ay, r: 4, fill: '#3D7AFF', stroke: 'rgba(255,255,255,0.5)', 'stroke-width': 0.5 }, parent);
+    NS('text', { x: ax, y: ay + 2.5, 'text-anchor': 'middle', class: 'lbl-card-meta', fill: '#fff' }, parent).textContent = ownerInit;
+    // Status pill at bottom of card
+    const [sx, sy] = cam(x, y + ch + 0.01, z + cd / 2 - 0.18);
+    const stColor = status === 'Approved' ? '#1F9B5A' : status === 'In Review' ? '#F59E0B' : '#3D7AFF';
+    NS('rect', { x: sx - 18, y: sy - 5, width: 36, height: 10, rx: 5, fill: stColor + '30', stroke: stColor, 'stroke-width': 0.5 }, parent);
+    NS('text', { x: sx, y: sy + 3, 'text-anchor': 'middle', class: 'lbl-card-meta', fill: stColor }, parent).textContent = status;
+  }
+
+  // Frustration label — a small rounded box with text, in iso space
+  function drawFrustrationLabel(parent, cam, x, y, z, text, opts = {}) {
+    const [px, py] = cam(x, y, z);
+    const textWidth = text.length * 4.5 + 14;
+    NS('rect', { x: px - textWidth / 2, y: py - 8, width: textWidth, height: 14, rx: 3, fill: 'rgba(20,22,30,0.92)', stroke: 'rgba(255,255,255,0.30)', 'stroke-width': 0.5 }, parent);
+    NS('text', { x: px, y: py + 2, 'text-anchor': 'middle', class: 'lbl-frustration' }, parent).textContent = text;
+  }
+
+  // Color-as-meaning atom
+  function atom(parent, cam, x, y, z, kind, palette) {
+    const [px, py] = cam(x, y, z);
+    const s = 6;
+    palette = palette || FRAG[2];
+    if (kind === 'env') {
+      NS('rect', { x: px - s, y: py - s*0.5, width: s*2, height: s*1.1, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+      NS('polyline', { points: `${px - s},${py - s*0.5} ${px},${py + s*0.2} ${px + s},${py - s*0.5}`, fill: 'none', stroke: palette.right, 'stroke-width': 0.6 }, parent);
+    } else if (kind === 'chat') {
+      NS('rect', { x: px - s, y: py - s*0.5, width: s*2, height: s*1.1, rx: 2, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+    } else if (kind === 'doc') {
+      NS('rect', { x: px - s*0.55, y: py - s, width: s*1.1, height: s*1.5, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+    } else if (kind === 'at') {
+      NS('circle', { cx: px, cy: py, r: s*0.65, fill: 'none', stroke: palette.top, 'stroke-width': 0.8 }, parent);
+    } else if (kind === 'call') {
+      NS('circle', { cx: px, cy: py, r: s*0.65, fill: 'none', stroke: palette.top, 'stroke-width': 0.8 }, parent);
+    } else if (kind === 'cube') {
+      isoCube(parent, cam, x, y - 0.1, z, 0.25, 0.20, 0.25, palette, Math.random() * 40 - 20);
+    }
+  }
+
+  // Cloud of coordination chaos around SoC
+  function drawChaos(parent, cam, center, count, seed = 7, vSpread = 2.4) {
+    const rng = mulberry32(seed);
+    const kinds = ['env', 'chat', 'doc', 'at', 'call'];
+    for (let i = 0; i < count; i++) {
+      const x = center.x + (rng() - 0.5) * 6;
+      const y = 1.3 + rng() * vSpread;
+      const z = center.z + (rng() - 0.5) * 6;
+      const fp = FRAG[Math.floor(rng() * 4)];
+      atom(parent, cam, x, y, z, kinds[Math.floor(rng() * kinds.length)], fp);
+    }
+  }
+
+  // Debris on the floor (with color-as-meaning)
+  function drawDebris(parent, cam, center, count, spread = 2.2, seed = 13) {
+    const rng = mulberry32(seed);
+    const heap = [];
+    for (let i = 0; i < count; i++) {
+      const r2 = rng() * spread;
+      const ang = rng() * Math.PI * 2;
+      const x = center.x + Math.cos(ang) * r2;
+      const z = center.z + Math.sin(ang) * r2;
+      const y = (i % 7) * 0.03;
+      const palette = FRAG[Math.floor(rng() * 4)];
+      heap.push({ x, y, z, palette, rotate: (rng() - 0.5) * 60 });
+    }
+    heap.sort((a, b) => (a.x + a.z) - (b.x + b.z));
+    for (const f of heap) {
+      const w = 0.28 + rng() * 0.30;
+      const d = 0.22 + rng() * 0.28;
+      const h = 0.04 + rng() * 0.04;
+      isoCube(parent, cam, f.x, f.y, f.z, w, h, d, f.palette, f.rotate);
+    }
+  }
+
+  // Dashed flow line (used for CONTEXT/CAPTURE/ARTIFACTS/WRITE-BACK)
+  function flowLine(parent, cam, p1, p2, color, opts = {}) {
+    const a = cam(p1[0], p1[1], p1[2]);
+    const b = cam(p2[0], p2[1], p2[2]);
+    const mid = [(a[0] + b[0]) / 2 + (opts.bowX || 0), (a[1] + b[1]) / 2 + (opts.bowY || -16)];
+    NS('path', {
+      d: `M${a[0]},${a[1]} Q${mid[0]},${mid[1]} ${b[0]},${b[1]}`,
+      fill: 'none', stroke: color,
+      'stroke-width': opts.w || 1.1,
+      'stroke-linecap': 'round',
+      'stroke-dasharray': opts.dash || '5 4',
+      opacity: opts.opacity || 0.85,
+    }, parent);
+    // tiny arrowhead at endpoint
+    if (opts.arrow !== false) {
+      const dx = b[0] - mid[0], dy = b[1] - mid[1];
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      const tip = [b[0], b[1]];
+      const base1 = [b[0] - ux * 6 + uy * 3, b[1] - uy * 6 - ux * 3];
+      const base2 = [b[0] - ux * 6 - uy * 3, b[1] - uy * 6 + ux * 3];
+      NS('polygon', { points: pts([tip, base1, base2]), fill: color, opacity: opts.opacity || 0.85 }, parent);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // SCREEN-SPACE UI ELEMENTS (cost panel, flow legend)
+  // Drawn on top of the iso scene at fixed panel positions.
+  // ──────────────────────────────────────────────────────
+  function drawCostPanel(parent, panelW, panelH) {
+    const w = 240, h = 110;
+    const x = 30, y = panelH - h - 80;
+    NS('rect', { x, y, width: w, height: h, rx: 3, fill: 'rgba(15,17,24,0.92)', stroke: 'rgba(255,255,255,0.10)', 'stroke-width': 0.7 }, parent);
+    NS('text', { x: x + 14, y: y + 22, class: 'ui-cost-label' }, parent).textContent = 'COORDINATION TAX';
+    NS('text', { x: x + 14, y: y + 50, class: 'ui-cost-value' }, parent).textContent = '$4.7M / year';
+    NS('text', { x: x + 132, y: y + 50, class: 'ui-cost-delta' }, parent).textContent = '↑ 23%';
+    const drivers = ['High Latency', 'Rework', 'Evidence Hunting', 'Meetings Overhead', 'Late Discovery', 'Deadline Pressure'];
+    const dotColors = ['#7AA0E0', '#F0C84A', '#D8635A', '#D8635A', '#F0C84A', '#D8635A'];
+    drivers.forEach((d, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const dx = x + 14 + col * 116;
+      const dy = y + 70 + row * 13;
+      NS('circle', { cx: dx + 4, cy: dy - 2.5, r: 2, fill: dotColors[i] }, parent);
+      NS('text', { x: dx + 12, y: dy, class: 'ui-cost-driver' }, parent).textContent = d;
+    });
+  }
+
+  // Flow legend — 2×2 compact grid (fits inside any panel width)
+  function drawFlowLegend(parent, panelW, panelH) {
+    const entries = [
+      { color: '#3D7AFF', label: 'CONTEXT',    sub: 'records, links',         dash: '6 0' },
+      { color: '#B7A7E8', label: 'CAPTURE',    sub: 'decisions, approvals',   dash: '6 0' },
+      { color: '#F0C84A', label: 'ARTIFACTS',  sub: 'files, attachments',     dash: '5 4' },
+      { color: '#F0C84A', label: 'WRITE-BACK', sub: 'finished record',        dash: '6 0' },
+    ];
+    const cellW = 165, cellH = 26;
+    const startX = panelW - 2 * cellW - 30;
+    const startY = panelH - 2 * cellH - 26;
+    entries.forEach((e, i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      const xx = startX + col * cellW;
+      const yy = startY + row * cellH;
+      NS('line', { x1: xx, y1: yy + 8, x2: xx + 22, y2: yy + 8, stroke: e.color, 'stroke-width': 1.6, 'stroke-dasharray': e.dash, 'stroke-linecap': 'round' }, parent);
+      NS('polygon', { points: `${xx + 22},${yy + 8} ${xx + 18},${yy + 5} ${xx + 18},${yy + 11}`, fill: e.color }, parent);
+      NS('text', { x: xx + 30, y: yy + 8, class: 'ui-legend-label' }, parent).textContent = e.label;
+      NS('text', { x: xx + 30, y: yy + 19, class: 'ui-legend-sub' }, parent).textContent = e.sub;
+    });
+  }
+
+  // Small audit-trail screen used by NOC and other paradigms
+  function drawAuditScreen(parent, cam, anchor, w = 2.0, h = 1.2) {
+    // Standing vertical screen — rendered as a tilted rect using two world points (base and top)
+    const baseL = [anchor.x - w/2 * 0.8, anchor.y, anchor.z + w/2 * 0.5];
+    const baseR = [anchor.x + w/2 * 0.8, anchor.y, anchor.z - w/2 * 0.5];
+    const topL = [baseL[0], baseL[1] + h, baseL[2]];
+    const topR = [baseR[0], baseR[1] + h, baseR[2]];
+    const pL = cam(...baseL), pR = cam(...baseR);
+    const pTL = cam(...topL), pTR = cam(...topR);
+    NS('polygon', { points: pts([pL, pR, pTR, pTL]), fill: '#0f1118', stroke: 'rgba(125,150,255,0.5)', 'stroke-width': 0.7 }, parent);
+    // 3 simulated rows
+    for (let i = 0; i < 3; i++) {
+      const ty = i * 0.32 + 0.20;
+      const aL = cam(baseL[0] + 0.10, baseL[1] + ty, baseL[2] - 0.05);
+      const aR = cam(baseR[0] - 0.10, baseR[1] + ty, baseR[2] + 0.05);
+      NS('line', { x1: aL[0], y1: aL[1], x2: aR[0], y2: aR[1], stroke: 'rgba(125,150,255,0.55)', 'stroke-width': 0.6 }, parent);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PANEL FRAME — 2 cols × 3 rows grid layout
+  // ──────────────────────────────────────────────────────
+  function drawPanel(parent, idx, panelW, panelH, camCfg, drawFn, label, gridId) {
+    const col = idx % 2, row = Math.floor(idx / 2);
+    const x = col * panelW, y = row * panelH;
+    const g = NS('g', { transform: `translate(${x},${y})` }, parent);
+    // Iso grid background fill — clipped to panel inner area
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3, fill: `url(#${gridId})` }, g);
+    // Clip child group to the panel frame
+    const clipId = `clip-${Math.random().toString(36).slice(2, 9)}`;
+    const defs = NS('defs', null, g);
+    const clip = NS('clipPath', { id: clipId }, defs);
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3 }, clip);
+    const clipped = NS('g', { 'clip-path': `url(#${clipId})` }, g);
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3, class: 'panel-frame' }, g);
+    NS('text', { x: 18, y: 22, class: 'panel-num' }, g).textContent = `0${idx + 1}`;
+    if (label) {
+      NS('text', { x: panelW - 18, y: 22, 'text-anchor': 'end', class: 'panel-label' }, g).textContent = label;
+    }
+    const cx = panelW / 2, cy = panelH * 0.58;
+    const scale = (camCfg.scale || 12);
+    const cam = makeCam({
+      az: camCfg.az ?? 32, el: camCfg.el ?? 35.264, scale, cx, cy,
+      lookX: camCfg.lookX, lookY: camCfg.lookY, lookZ: camCfg.lookZ,
+    });
+    drawFn(clipped, cam, camCfg, panelW, panelH);
+    return g;
+  }
+
+  // ══════════════════════════════════════════════════════
+  // PARADIGM 01 — PANORAMA: THE GOVERNED LAYER
+  // (matches the attached reference image)
+  // Builds the full scene element by element: SoR cluster left,
+  // SoC hex-table with people right, Unifize platform centre
+  // with active work cards, frustration labels, cost panel,
+  // flow legend. All visible at once in the final panel.
+  // ══════════════════════════════════════════════════════
+  const PANORAMA_ANCHORS = {
+    sor:  { x: 8, z: -6 },        // left side (because iso swaps screen-x signs)
+    soc:  { x: -8, z: 9 },        // right side
+    uni:  { x: 0, y: 0, z: 1.5 }, // centre
+  };
+
+  function paradigm01(strip, panelW, panelH, gridId) {
+    const cam0 = { az: 32, el: 35.264, scale: 13, lookX: 0, lookY: 3, lookZ: 2 };
+    const cams = [cam0, cam0, cam0, cam0, cam0, cam0];
+    const labels = ['SoR + SoC', '+ PEOPLE / FRUSTRATIONS', '+ CHAOS + DEBRIS', '+ UNIFIZE PLATFORM', '+ WORK CARDS / FLOWS', '+ COST PANEL'];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam, _cfg, panelW, panelH) => {
+        // Floor
+        isoFloor(g, cam, 14, 16);
+
+        // SoR cluster (left side)
+        drawSoRCluster(g, cam, PANORAMA_ANCHORS.sor);
+
+        // SoC hex table (right side) — always present, people start at p=1
+        drawHexTableSoC(g, cam, PANORAMA_ANCHORS.soc, { r: 2.6, peopleCount: p >= 1 ? 6 : 0 });
+
+        // Frustrations from p=1
+        if (p >= 1) {
+          const labels = [
+            { x: -8.5, y: 2.6, z: 9, t: 'WAITING ON SOMEBODY' },
+            { x: -5.8, y: 3.0, z: 7.5, t: 'LOOKING FOR FILE' },
+            { x: -10, y: 2.4, z: 11.5, t: 'REDOING SAME WORK' },
+            { x: -7, y: 2.8, z: 11, t: 'LAST MINUTE FIRE DRILL' },
+          ];
+          for (const l of labels) drawFrustrationLabel(g, cam, l.x, l.y, l.z, l.t);
+        }
+
+        // Chaos atoms above SoC + debris in gap from p=2
+        if (p >= 2) {
+          drawChaos(g, cam, { x: -8, z: 9 }, 22, 200);
+          drawDebris(g, cam, { x: -2, z: 4 }, 28, 1.8, 400);
+        }
+
+        // Unifize platform centre from p=3
+        if (p >= 3) {
+          drawUnifizePlatform(g, cam, PANORAMA_ANCHORS.uni, { w: 6.0, h: 1.0, d: 4.0 });
+        }
+
+        // Work cards on top from p=4
+        if (p >= 4) {
+          const cards = [
+            { name: 'Supplier Deviation', status: 'In Progress', owner: 'M' },
+            { name: 'CAPA-1268',          status: 'In Review',   owner: 'A' },
+            { name: 'Change Control',     status: 'Approved',    owner: 'J' },
+            { name: 'Audit Finding',      status: 'In Progress', owner: 'L' },
+          ];
+          const cardY = PANORAMA_ANCHORS.uni.y + 1.0;
+          cards.forEach((c, i) => {
+            const cx = PANORAMA_ANCHORS.uni.x + (i - 1.5) * 1.30;
+            const cz = PANORAMA_ANCHORS.uni.z;
+            drawWorkCard(g, cam, cx, cardY, cz, c.name, c.status, c.owner);
+          });
+
+          // Flow arrows
+          // CONTEXT: SoR records → Unifize platform (blue)
+          for (let i = 0; i < 4; i++) {
+            const rx = PANORAMA_ANCHORS.sor.x + ((i % 2) - 0.5) * 1.7;
+            const rz = PANORAMA_ANCHORS.sor.z + (Math.floor(i / 2) - 0.5) * 1.7;
+            flowLine(g, cam, [rx, 1.4, rz], [PANORAMA_ANCHORS.uni.x - 2.0, 1.2, PANORAMA_ANCHORS.uni.z], '#3D7AFF', { dash: '6 0', w: 1.0, opacity: 0.75 });
+          }
+          // CAPTURE: SoC people → Unifize platform (purple-lavender)
+          for (let i = 0; i < 4; i++) {
+            const ang = (i / 6) * Math.PI * 2 + Math.PI / 6;
+            const px = PANORAMA_ANCHORS.soc.x + Math.cos(ang) * 3.5;
+            const pz = PANORAMA_ANCHORS.soc.z + Math.sin(ang) * 3.5;
+            flowLine(g, cam, [px, 1.4, pz], [PANORAMA_ANCHORS.uni.x + 2.0, 1.2, PANORAMA_ANCHORS.uni.z], '#B7A7E8', { dash: '6 0', w: 1.0, opacity: 0.75 });
+          }
+        }
+
+        // UI overlays (cost panel + legend) from p=5
+        if (p >= 5) {
+          drawCostPanel(g, panelW, panelH);
+          drawFlowLegend(g, panelW, panelH);
+        }
+      }, labels[p], gridId);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // PARADIGM 02 — UNIFIZE AS GOVERNING LAYER ALONGSIDE
+  // (matches the user's "for example" description)
+  // SoR and SoC across the screen. Information flows between
+  // SoC. Only some reaches SoR. The rest piles as debris.
+  // Unifize is introduced as a *parallel* governing layer that
+  // works alongside both. It produces its own audit-trail
+  // output (a screen / billboard) — it does NOT feed back into
+  // SoR or SoC.
+  // ══════════════════════════════════════════════════════
+  function paradigm02(strip, panelW, panelH, gridId) {
+    const cam0 = { az: 32, el: 35.264, scale: 13, lookX: -1, lookY: 3, lookZ: 2 };
+    const cams = new Array(6).fill(cam0);
+    const labels = ['SoR + SoC ACROSS', 'INFORMATION FLOWING', 'DEBRIS ACCUMULATES', 'UNIFIZE LAYER APPEARS', 'CAPTURING FROM BOTH', 'AUDIT-TRAIL ALONGSIDE'];
+    const sorA = { x: 8, z: -6 };
+    const socA = { x: -8, z: 9 };
+    const uniLayerA = { x: 0, y: 4.0, z: 2 };
+    const auditA = { x: 1.5, y: 4.5, z: -3 };
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam, _cfg, panelW, panelH) => {
+        isoFloor(g, cam, 14, 16);
+        drawSoRCluster(g, cam, sorA);
+        drawHexTableSoC(g, cam, socA, { r: 2.6, peopleCount: p >= 1 ? 6 : 0 });
+
+        // Chaos atoms appear from p=1 (information flowing within SoC)
+        if (p >= 1) {
+          drawChaos(g, cam, { x: -8, z: 9 }, 20, 600);
+          // Thin trickle reaching SoR — a few atoms in mid-flight toward records
+          const trng = mulberry32(700);
+          for (let i = 0; i < 5; i++) {
+            const t = (i + 1) / 6;
+            const x = socA.x + (sorA.x - socA.x) * t;
+            const y = 1.8 - t * 0.5;
+            const z = socA.z + (sorA.z - socA.z) * t;
+            const fp = FRAG[Math.floor(trng() * 4)];
+            atom(g, cam, x, y, z, 'env', fp);
+          }
+        }
+
+        // Debris pile in the gap from p=2 (the rest that didn't make it)
+        if (p >= 2) {
+          drawDebris(g, cam, { x: -2, z: 4 }, 38, 2.2, 800);
+        }
+
+        // Unifize as a parallel governing LAYER from p=3
+        // It's a long, low blue slab floating ABOVE the floor, between SoR and SoC
+        if (p >= 3) {
+          isoCube(g, cam, uniLayerA.x, uniLayerA.y, uniLayerA.z, 14, 0.35, 7, UNI);
+          // Soft glow halo underneath
+          isoCube(g, cam, uniLayerA.x, uniLayerA.y - 0.05, uniLayerA.z, 14.6, 0.10, 7.6, UNI_DEEP);
+          // "named threads" visible on the layer top — small pills with labels
+          const threads = ['CR-241', 'CAPA-1268', 'NCR-419', 'ECO-77', 'AUDIT-Q3'];
+          threads.forEach((th, i) => {
+            const tx = uniLayerA.x + (i - 2) * 2.5;
+            const tz = uniLayerA.z;
+            isoCube(g, cam, tx, uniLayerA.y + 0.35, tz, 1.8, 0.10, 0.7, { top: '#f4f1e6', right: '#bdb89e', front: '#d8d2b8', stroke: 'rgba(80,70,50,0.35)' });
+            const [tpx, tpy] = cam(tx, uniLayerA.y + 0.46, tz);
+            const t = NS('text', { x: tpx, y: tpy + 3, 'text-anchor': 'middle', class: 'lbl-card-title', fill: '#1a1a22' }, g);
+            t.textContent = th;
+          });
+        }
+
+        // Capture filaments from BOTH SoR and SoC up into the Unifize layer (from p=4)
+        if (p >= 4) {
+          // CONTEXT from SoR (blue)
+          for (let i = 0; i < 4; i++) {
+            const rx = sorA.x + ((i % 2) - 0.5) * 1.7;
+            const rz = sorA.z + (Math.floor(i / 2) - 0.5) * 1.7;
+            flowLine(g, cam, [rx, 1.4, rz], [uniLayerA.x + 4 + i * 0.3, uniLayerA.y, uniLayerA.z], '#3D7AFF', { w: 0.9, dash: '6 0', opacity: 0.70 });
+          }
+          // CAPTURE from SoC (purple)
+          for (let i = 0; i < 5; i++) {
+            const ang = (i / 6) * Math.PI * 2 + Math.PI / 6;
+            const px = socA.x + Math.cos(ang) * 3.5;
+            const pz = socA.z + Math.sin(ang) * 3.5;
+            flowLine(g, cam, [px, 1.4, pz], [uniLayerA.x - 4 + i * 0.5, uniLayerA.y, uniLayerA.z], '#B7A7E8', { w: 0.9, dash: '6 0', opacity: 0.70 });
+          }
+        }
+
+        // Audit billboard "alongside" from p=5 — Unifize's own output
+        if (p >= 5) {
+          // a vertical screen / billboard parallel to the layer
+          drawAuditScreen(g, cam, auditA, 3.0, 1.8);
+          const [ax, ay] = cam(auditA.x, auditA.y + 1.95, auditA.z);
+          NS('text', { x: ax, y: ay, 'text-anchor': 'middle', class: 'lbl-record', fill: '#7AA0E0' }, g).textContent = 'AUDIT TRAIL';
+        }
+      }, labels[p], gridId);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // PARADIGM 03 — NETWORK OPS CENTER (ELEVATED OBSERVER)
+  // Floor-level: the real-world scene (SoR + SoC + chaos).
+  // Suspended above it: a Unifize NOC platform with operator
+  // silhouettes watching screens. Each screen displays a
+  // tracked thread. The NOC is connected to the floor by
+  // OBSERVATION BEAMS (not feed lines).
+  // ══════════════════════════════════════════════════════
+  function paradigm03(strip, panelW, panelH, gridId) {
+    const cam0 = { az: 32, el: 35.264, scale: 11, lookX: -1, lookY: 4, lookZ: 2 };
+    const cams = new Array(6).fill(cam0);
+    const labels = ['FLOOR-LEVEL WORLD', '+ CHAOS / DEBRIS', '+ NOC PLATFORM RISES', '+ OPERATORS', '+ SCREENS / AUDIT', '+ OBSERVATION BEAMS'];
+    const sorA = { x: 8, z: -6 };
+    const socA = { x: -8, z: 9 };
+    const nocA = { x: 0, y: 6, z: 2 };
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam, _cfg, panelW, panelH) => {
+        isoFloor(g, cam, 14, 16);
+        drawSoRCluster(g, cam, sorA);
+        drawHexTableSoC(g, cam, socA, { r: 2.6, peopleCount: p >= 0 ? 6 : 0 });
+
+        if (p >= 1) {
+          drawChaos(g, cam, { x: -8, z: 9 }, 22, 1000);
+          drawDebris(g, cam, { x: -2, z: 4 }, 30, 2.0, 1100);
+        }
+
+        // NOC platform (elevated above the scene) from p=2
+        if (p >= 2) {
+          isoCube(g, cam, nocA.x, nocA.y, nocA.z, 10, 0.50, 5.5, UNI);
+          isoCube(g, cam, nocA.x, nocA.y - 0.08, nocA.z, 10.6, 0.12, 6.1, UNI_DEEP);
+        }
+        // Operator silhouettes from p=3
+        if (p >= 3) {
+          for (let i = 0; i < 4; i++) {
+            const ox = nocA.x + (i - 1.5) * 2.2;
+            const oz = nocA.z + 0.8;
+            drawHuman(g, cam, ox, oz, 0.8);
+            // small desk
+            isoCube(g, cam, ox, nocA.y + 0.5, oz - 0.4, 0.6, 0.30, 0.40, SoC_DESK);
+          }
+        }
+        // Audit screens on the NOC from p=4
+        if (p >= 4) {
+          for (let i = 0; i < 4; i++) {
+            const sx = nocA.x + (i - 1.5) * 2.2;
+            const sz = nocA.z - 0.6;
+            drawAuditScreen(g, cam, { x: sx, y: nocA.y + 0.5, z: sz }, 1.6, 1.0);
+          }
+        }
+        // Observation beams from the NOC down to specific events on the floor (p=5)
+        if (p >= 5) {
+          const targets = [
+            { x: -8, z: 9 },  // SoC table
+            { x: -2, z: 4 },  // debris pile
+            { x: 8, z: -6 },  // SoR
+            { x: -5, z: 6 },  // chaos area
+          ];
+          targets.forEach((t, i) => {
+            const a = cam(nocA.x + (i - 1.5) * 2.2, nocA.y, nocA.z);
+            const b = cam(t.x, 0.4, t.z);
+            NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(125,180,255,0.30)', 'stroke-width': 0.7, 'stroke-dasharray': '2 4' }, g);
+          });
+        }
+      }, labels[p], gridId);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // PARADIGM 04 — THE DEBRIS NET (UNIFIZE LIFTS GAP-WORK)
+  // SoR + SoC across screen. Debris piles in the gap. Then
+  // a large rectangular Unifize NET emerges FROM the debris
+  // pile, lifting it. The lifted net's surface becomes the
+  // organised, auditable thread grid. SoR and SoC are
+  // untouched throughout.
+  // ══════════════════════════════════════════════════════
+  function paradigm04(strip, panelW, panelH, gridId) {
+    const cam0 = { az: 32, el: 35.264, scale: 12, lookX: -1, lookY: 3, lookZ: 2 };
+    const cams = new Array(6).fill(cam0);
+    const labels = ['SoR + SoC + CHAOS', 'DEBRIS ACCUMULATES', 'NET FORMS AT FLOOR', 'NET LIFTS DEBRIS', 'DEBRIS → ORDERED CARDS', 'NET SUSPENDED'];
+    const sorA = { x: 8, z: -6 };
+    const socA = { x: -8, z: 9 };
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam, _cfg) => {
+        isoFloor(g, cam, 14, 16);
+        drawSoRCluster(g, cam, sorA);
+        drawHexTableSoC(g, cam, socA, { r: 2.6, peopleCount: 6 });
+        drawChaos(g, cam, { x: -8, z: 9 }, 16, 1400);
+
+        // Debris size grows then shrinks as the net lifts
+        const debrisCount = [16, 36, 36, 24, 14, 6][p];
+        const debrisH = [0, 0, 0, 0.3, 0.7, 1.4][p]; // how high they're being lifted
+        if (debrisCount > 0) {
+          drawDebris(g, cam, { x: -2, z: 4 }, debrisCount, 2.4, 1500);
+        }
+
+        // The Unifize net — appears at p=2, rises at p=3+
+        if (p >= 2) {
+          const netY = [0, 0, 0.0, 0.6, 1.4, 2.2][p];
+          // a thin blue rectangle representing the net
+          isoCube(g, cam, -2, netY, 4, 7.5, 0.15, 5.5, UNI);
+          // net grid: thin blue lines on top of the slab
+          const netRng = mulberry32(1600 + p);
+          for (let i = 0; i < 5; i++) {
+            const lx = -2 - 3.5 + i * 1.4 + 0.7;
+            const a = cam(lx, netY + 0.18, 4 - 2.5);
+            const b = cam(lx, netY + 0.18, 4 + 2.5);
+            NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(255,255,255,0.20)', 'stroke-width': 0.4 }, g);
+          }
+        }
+
+        // From p=4, debris on the net is now ordered "audit cards"
+        if (p >= 4) {
+          const cardCount = [0, 0, 0, 0, 4, 6][p];
+          const netY = [0, 0, 0.0, 0.6, 1.4, 2.2][p];
+          for (let i = 0; i < cardCount; i++) {
+            const cx = -2 + (i - (cardCount - 1) / 2) * 1.15;
+            const cz = 4 + (i % 2 === 0 ? -0.8 : 0.8);
+            isoCube(g, cam, cx, netY + 0.18, cz, 0.95, 0.10, 0.65, CREAM);
+            const fp = FRAG[i % 4];
+            const dot = cam(cx, netY + 0.30, cz);
+            NS('circle', { cx: dot[0], cy: dot[1], r: 1.8, fill: fp.top, stroke: fp.stroke, 'stroke-width': 0.4 }, g);
+          }
+        }
+      }, labels[p], gridId);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // PARADIGM 05 — PARALLEL LEDGER (TWO LAYERS)
+  // Floor: the real-world scene (SoR + SoC + chaos).
+  // Above: a parallel Unifize plane mirroring the events as
+  // an ordered audit-trail of named threads. The two layers
+  // are connected by thin filaments. Unifize doesn't push
+  // anything down; it simply mirrors what's happening below.
+  // ══════════════════════════════════════════════════════
+  function paradigm05(strip, panelW, panelH, gridId) {
+    const cam0 = { az: 32, el: 35.264, scale: 11, lookX: -1, lookY: 4, lookZ: 2 };
+    const cams = new Array(6).fill(cam0);
+    const labels = ['FLOOR SCENE', '+ CHAOS / DEBRIS', '+ EMPTY UPPER PLANE', '+ FIRST AUDIT ROWS', '+ FILAMENTS APPEAR', 'FULL MIRROR'];
+    const sorA = { x: 8, z: -6 };
+    const socA = { x: -8, z: 9 };
+    const upperY = 5.0;
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam, _cfg) => {
+        isoFloor(g, cam, 14, 16);
+        drawSoRCluster(g, cam, sorA);
+        drawHexTableSoC(g, cam, socA, { r: 2.6, peopleCount: 6 });
+        if (p >= 1) {
+          drawChaos(g, cam, { x: -8, z: 9 }, 22, 1800);
+          drawDebris(g, cam, { x: -2, z: 4 }, 30, 2.2, 1900);
+        }
+
+        // Upper plane (Unifize parallel ledger) — appears at p=2
+        if (p >= 2) {
+          // A thin translucent blue plane spanning above the scene
+          isoCube(g, cam, -1, upperY, 2, 17, 0.18, 11, { top: 'rgba(61,122,255,0.20)', right: 'rgba(10,18,40,0.25)', front: 'rgba(26,90,255,0.20)', stroke: 'rgba(125,150,255,0.40)' });
+        }
+        // Audit-row tiles on the upper plane (count grows with p)
+        if (p >= 3) {
+          const rowCount = [0, 0, 0, 3, 6, 9][p];
+          const threads = ['CR-241 · Approved', 'CR-240 · Closed', 'CAPA-1268 · In Review', 'NCR-419 · Closed', 'ECO-77 · Approved', 'AUDIT-Q3 · Closed', 'NCR-420 · In Review', 'CR-238 · Closed', 'DR-99 · Approved'];
+          for (let i = 0; i < rowCount; i++) {
+            const tx = -1 + (i % 3 - 1) * 3.8;
+            const tz = 2 + (Math.floor(i / 3) - 1) * 2.6;
+            isoCube(g, cam, tx, upperY + 0.18, tz, 3.2, 0.10, 1.0, CREAM);
+            const [tpx, tpy] = cam(tx, upperY + 0.32, tz);
+            const t = NS('text', { x: tpx, y: tpy + 3, 'text-anchor': 'middle', class: 'lbl-card-title', fill: '#1a1a22' }, g);
+            t.textContent = threads[i];
+          }
+        }
+
+        // Filaments from below scene → upper plane
+        if (p >= 4) {
+          const filRng = mulberry32(2000);
+          for (let i = 0; i < 10; i++) {
+            const sx = -1 + (filRng() - 0.5) * 14;
+            const sz = 2 + (filRng() - 0.5) * 10;
+            const sy = 0.5 + filRng() * 2;
+            const a = cam(sx, sy, sz), b = cam(sx, upperY, sz);
+            NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(125,150,255,0.35)', 'stroke-width': 0.5, 'stroke-dasharray': '3 3' }, g);
+          }
+        }
+      }, labels[p], gridId);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // PARADIGM 06 — THE CONTROL TOWER (CENTRAL OBSERVATORY)
+  // SoR town on one side, SoC town on the other. Between
+  // them: a tall Unifize observation tower. The tower's
+  // front face displays a live audit-trail. Beams of light
+  // from the tower's windows reach into both towns (observing,
+  // not feeding).
+  // ══════════════════════════════════════════════════════
+  function paradigm06(strip, panelW, panelH, gridId) {
+    const cam0 = { az: 32, el: 35.264, scale: 11, lookX: 0, lookY: 4, lookZ: 1.5 };
+    const cams = new Array(6).fill(cam0);
+    const labels = ['SoR + SoC TOWNS', '+ CHAOS + DEBRIS', 'TOWER FOUNDATION', 'TOWER RISES', '+ AUDIT FACADE', '+ OBSERVATION BEAMS'];
+    const sorA = { x: 8, z: -6 };
+    const socA = { x: -8, z: 9 };
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam, _cfg) => {
+        isoFloor(g, cam, 14, 16);
+        drawSoRCluster(g, cam, sorA);
+        drawHexTableSoC(g, cam, socA, { r: 2.6, peopleCount: 6 });
+        if (p >= 1) {
+          drawChaos(g, cam, { x: -8, z: 9 }, 22, 2200);
+          drawDebris(g, cam, { x: -2, z: 4 }, 28, 2.0, 2300);
+        }
+
+        // Tower foundation at p=2
+        if (p >= 2) {
+          isoCube(g, cam, 0, 0, 1.5, 3.0, 0.40, 3.0, UNI_DEEP);
+        }
+        // Tower rises at p=3
+        if (p >= 3) {
+          // Stack of 3 blue floors
+          const towerH = [0, 0, 0, 2.5, 5, 5][p];
+          isoCube(g, cam, 0, 0.4, 1.5, 2.5, towerH, 2.5, UNI);
+        }
+        // Audit facade at p=4 (a vertical screen on the tower's front)
+        if (p >= 4) {
+          drawAuditScreen(g, cam, { x: 1.0, y: 1.5, z: 0.3 }, 2.8, 3.5);
+        }
+        // Observation beams at p=5
+        if (p >= 5) {
+          // beams to SoR
+          for (let i = 0; i < 4; i++) {
+            const rx = sorA.x + ((i % 2) - 0.5) * 1.7;
+            const rz = sorA.z + (Math.floor(i / 2) - 0.5) * 1.7;
+            const a = cam(0.5, 5.0, 1.5), b = cam(rx, 1.4, rz);
+            NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(125,180,255,0.32)', 'stroke-width': 0.7, 'stroke-dasharray': '3 4' }, g);
+          }
+          // beams to SoC people
+          for (let i = 0; i < 4; i++) {
+            const ang = (i / 6) * Math.PI * 2 + Math.PI / 6;
+            const px = socA.x + Math.cos(ang) * 3.5;
+            const pz = socA.z + Math.sin(ang) * 3.5;
+            const a = cam(0.5, 5.0, 1.5), b = cam(px, 1.4, pz);
+            NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(125,180,255,0.32)', 'stroke-width': 0.7, 'stroke-dasharray': '3 4' }, g);
+          }
+        }
+      }, labels[p], gridId);
+    });
+  }
+
+  // ──────────────────────────────────────────────────────
+  // RENDER
+  // ──────────────────────────────────────────────────────
+  const concepts = [
+    { id: 'p01', title: 'PANORAMA · THE GOVERNED LAYER',                  sub: 'matches reference image · build-up', fn: paradigm01 },
+    { id: 'p02', title: 'UNIFIZE LAYER ALONGSIDE',                         sub: 'SoR + SoC across screen · debris between · Unifize as parallel governing layer', fn: paradigm02 },
+    { id: 'p03', title: 'NETWORK OPS CENTER',                              sub: 'elevated observer platform · operators watching screens', fn: paradigm03 },
+    { id: 'p04', title: 'THE DEBRIS NET',                                  sub: 'Unifize lifts and orders the gap-work', fn: paradigm04 },
+    { id: 'p05', title: 'PARALLEL LEDGER',                                 sub: 'two-layer mirror · floor scene + ordered audit plane above', fn: paradigm05 },
+    { id: 'p06', title: 'THE CONTROL TOWER',                               sub: 'central observatory · audit facade + observation beams', fn: paradigm06 },
+  ];
+
+  const main = document.getElementById('main');
+  const toc = document.getElementById('toc');
+  concepts.forEach((c, idx) => {
+    const a = document.createElement('a');
+    a.href = `#${c.id}`;
+    a.textContent = `${String(idx + 1).padStart(2, '0')} ${c.title}`;
+    toc.appendChild(a);
+
+    const section = document.createElement('section');
+    section.className = 'concept';
+    section.id = c.id;
+
+    const h = document.createElement('div');
+    h.className = 'title';
+    h.innerHTML = `<span class="num">${String(idx + 1).padStart(2, '0')}</span>${c.title}<span class="sub">${c.sub}</span>`;
+    section.appendChild(h);
+
+    const stripDiv = document.createElement('div');
+    stripDiv.className = 'strip';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const COLS = 2, ROWS = 3;
+    const panelW = 640, panelH = 480;
+    svg.setAttribute('viewBox', `0 0 ${COLS * panelW} ${ROWS * panelH}`);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    const gridId = `iso-bg-${idx}`;
+    addIsoGridPattern(svg, gridId);
+    c.fn(svg, panelW, panelH, gridId);
+    stripDiv.appendChild(svg);
+    section.appendChild(stripDiv);
+    main.appendChild(section);
+  });
+})();
+</script>
+</body>
+</html>

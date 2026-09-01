@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Concept Exploration 1 — Paradigm Sketches (SoR · SoC · Unifize)</title>
+<style>
+  :root {
+    --bg: #08090d;
+    --ink: #d8d8e0;
+    --hint: #4a4a52;
+    --line: rgba(255,255,255,0.07);
+    --panel-line: rgba(255,255,255,0.06);
+    --uni: #0052FF;
+    --uni-top: #3D7AFF;
+    --uni-front: #1A5AFF;
+    --uni-right: #0040C9;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.head {
+    position: sticky; top: 0; z-index: 10;
+    padding: 12px 28px 10px;
+    font-size: 10.5px; letter-spacing: 0.1em;
+    background: rgba(8,9,13,0.92);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  header.head .tag { color: #6e6e78; }
+  header.head .toc { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 6px; }
+  header.head .toc a { color: #50505a; text-decoration: none; transition: color 0.15s; }
+  header.head .toc a:hover { color: var(--ink); }
+  section.concept {
+    min-height: 100vh; height: 100vh;
+    padding: 12vh 4vw 6vh;
+    display: flex; flex-direction: column;
+    border-bottom: 1px solid var(--line);
+  }
+  .title {
+    font-size: 10.5px; letter-spacing: 0.22em;
+    color: #7a7a82;
+    margin: 0 0 1vh;
+    text-transform: uppercase;
+  }
+  .title .num { color: #3a3a42; margin-right: 18px; }
+  .strip {
+    flex: 1; min-height: 0;
+    width: 100%; height: 68vh; max-height: 68vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .strip svg { width: 100%; height: 100%; display: block; }
+  .panel-frame { stroke: var(--panel-line); fill: none; stroke-width: 0.6; }
+  .panel-num { fill: #2c2c34; font-size: 11px; letter-spacing: 0.12em; font-family: ui-monospace, monospace; }
+  .cam-tag { fill: #353540; font-size: 9px; letter-spacing: 0.1em; font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div><span class="tag">CONCEPT EXPLORATION 1 / V2 / SoR · SoC · UNIFIZE — paradigm change, camera-led narrative</span></div>
+  <div class="toc" id="toc"></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+(() => {
+  // ──────────────────────────────────────────────────────
+  // CAMERA — variable az / el / zoom per panel.
+  // Returns a proj(x,y,z) function. World: y is up.
+  // ──────────────────────────────────────────────────────
+  // sx = horizontal screen position (right positive).
+  // depth = horizontal depth in floor plane (orthogonal to sx).
+  // sy_down = vertical screen position (DOWN positive, matches SVG).
+  // At az=45°, +x goes to lower-right, +z goes to lower-left, +y goes up.
+  function makeCam(opts) {
+    const az = (opts.az ?? 45) * Math.PI / 180;
+    const el = (opts.el ?? 30) * Math.PI / 180;
+    const scale = opts.scale ?? 20;
+    const cx = opts.cx ?? 0;
+    const cy = opts.cy ?? 0;
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const ce = Math.cos(el), se = Math.sin(el);
+    return (x, y, z) => {
+      const sx = ca * x - sa * z;
+      const depth = sa * x + ca * z;
+      const sy = depth * se - y * ce;
+      return [cx + sx * scale, cy + sy * scale];
+    };
+  }
+
+  const NS = (name, attrs, parent) => {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', name);
+    if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  const pts = (arr) => arr.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
+
+  // ──────────────────────────────────────────────────────
+  // PALETTES — flat low-fi, color = meaning
+  // (yellow=approval, green=resolved, blue=evidence, red=disagreement)
+  // ──────────────────────────────────────────────────────
+  const SoR = { top: '#3D4049', right: '#1C1E25', front: '#2A2D35', stroke: 'rgba(255,255,255,0.20)' };
+  const SoC = { top: '#272930', right: '#0F1116', front: '#1B1D24', stroke: 'rgba(255,255,255,0.20)' };
+  const SoC_PLINTH = { top: '#1A1C22', right: '#08090D', front: '#101218', stroke: 'rgba(255,255,255,0.16)' };
+  const UNI = { top: '#3D7AFF', right: '#0040C9', front: '#1A5AFF', stroke: 'rgba(255,255,255,0.30)' };
+  const UNI_DIM = { top: '#1A2540', right: '#0A1228', front: '#121A32', stroke: 'rgba(125,150,255,0.32)' };
+  const CREAM = { top: '#E8D8B0', right: '#8C7748', front: '#B59E68', stroke: 'rgba(120,90,40,0.40)' };
+
+  // Color-as-meaning fragments (kaleidoscope, not stacks)
+  const FRAG_PALETTES = [
+    { top: '#F0C84A', right: '#9D7A1F', front: '#C49C2E', stroke: 'rgba(120,90,30,0.35)' }, // yellow = approvals
+    { top: '#6BB07C', right: '#2E5A38', front: '#4A8253', stroke: 'rgba(40,80,50,0.40)' },   // green = resolved truth
+    { top: '#7AA0E0', right: '#2E4D8A', front: '#4D72B8', stroke: 'rgba(40,60,120,0.40)' },  // blue = evidence
+    { top: '#D8635A', right: '#7A2B25', front: '#A8413A', stroke: 'rgba(110,40,30,0.40)' },  // red = disagreement
+  ];
+
+  const VOID_HATCH = 'rgba(255,255,255,0.07)';
+  const FLOOR_GRID = 'rgba(255,255,255,0.045)';
+
+  // ──────────────────────────────────────────────────────
+  // CUBOID
+  // ──────────────────────────────────────────────────────
+  function isoCube(parent, cam, x, y, z, w, h, d, palette, rotate = 0) {
+    const hw = w / 2, hd = d / 2;
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const rot = (lx, lz) => [x + lx * cosR - lz * sinR, z + lx * sinR + lz * cosR];
+    const C = (lx, ly, lz) => {
+      const [wx, wz] = rot(lx, lz);
+      return cam(wx, y + ly, wz);
+    };
+    // vertices A..H
+    const A = C(-hw, 0, -hd);
+    const B = C(hw, 0, -hd);
+    const Cc = C(hw, 0, hd);
+    const D = C(-hw, 0, hd);
+    const E = C(-hw, h, -hd);
+    const F = C(hw, h, -hd);
+    const G = C(hw, h, hd);
+    const H = C(-hw, h, hd);
+    // top
+    NS('polygon', { points: pts([E, F, G, H]), fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    // +z (front)
+    NS('polygon', { points: pts([D, Cc, G, H]), fill: palette.front, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    // +x (right)
+    NS('polygon', { points: pts([Cc, B, F, G]), fill: palette.right, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+  }
+
+  // Iso floor grid
+  function isoFloor(parent, cam, half = 5, div = 10) {
+    const g = NS('g', { opacity: 0.6 }, parent);
+    const step = (half * 2) / div;
+    for (let i = 0; i <= div; i++) {
+      const t = -half + i * step;
+      const a = cam(-half, 0, t), b = cam(half, 0, t);
+      NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: FLOOR_GRID, 'stroke-width': 0.4 }, g);
+      const c = cam(t, 0, -half), d = cam(t, 0, half);
+      NS('line', { x1: c[0], y1: c[1], x2: d[0], y2: d[1], stroke: FLOOR_GRID, 'stroke-width': 0.4 }, g);
+    }
+  }
+
+  // Tiny atom in air: env, chat, doc, cal, @, call, file
+  function atom(parent, cam, x, y, z, kind, palette) {
+    const [px, py] = cam(x, y, z);
+    const s = 8;
+    palette = palette || FRAG_PALETTES[2];
+    if (kind === 'env') {
+      NS('rect', { x: px - s, y: py - s*0.6, width: s*2, height: s*1.2, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+      NS('polyline', { points: `${px - s},${py - s*0.6} ${px},${py + s*0.2} ${px + s},${py - s*0.6}`, fill: 'none', stroke: palette.right, 'stroke-width': 0.7 }, parent);
+    } else if (kind === 'chat') {
+      NS('rect', { x: px - s, y: py - s*0.6, width: s*2, height: s*1.2, rx: 2, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+      NS('polygon', { points: `${px - s*0.5},${py + s*0.6} ${px - s*0.5 - 4},${py + s*0.6 + 5} ${px - s*0.5 + 4},${py + s*0.6}`, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+    } else if (kind === 'doc') {
+      NS('rect', { x: px - s*0.6, y: py - s, width: s*1.2, height: s*1.7, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+      for (let i = 1; i <= 3; i++) {
+        const ly = py - s + (i * s*1.7 / 4);
+        NS('line', { x1: px - s*0.4, y1: ly, x2: px + s*0.4, y2: ly, stroke: palette.right, 'stroke-width': 0.4 }, parent);
+      }
+    } else if (kind === 'cal') {
+      NS('rect', { x: px - s, y: py - s, width: s*2, height: s*1.7, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+      NS('line', { x1: px - s, y1: py - s*0.5, x2: px + s, y2: py - s*0.5, stroke: palette.right, 'stroke-width': 0.5 }, parent);
+    } else if (kind === 'at') {
+      NS('circle', { cx: px, cy: py, r: s*0.7, fill: 'none', stroke: palette.top, 'stroke-width': 0.9 }, parent);
+      NS('circle', { cx: px, cy: py, r: s*0.32, fill: 'none', stroke: palette.top, 'stroke-width': 0.7 }, parent);
+    } else if (kind === 'call') {
+      NS('circle', { cx: px, cy: py, r: s*0.7, fill: 'none', stroke: palette.top, 'stroke-width': 0.9 }, parent);
+      NS('path', { d: `M${px - s*0.35},${py - s*0.15} q${s*0.35},${s*0.4} ${s*0.7},0`, fill: 'none', stroke: palette.top, 'stroke-width': 0.7 }, parent);
+    } else if (kind === 'dot') {
+      NS('circle', { cx: px, cy: py, r: 2.4, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.4 }, parent);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // VOCABULARY — composite pieces from the kit
+  // ──────────────────────────────────────────────────────
+
+  // SoR cluster: small graphite cubes with a tiny 4-dot glyph
+  // Real records: QMS / ERP / PLM / DMS / MES (no labels — silhouette only)
+  function drawSoR(parent, cam, anchor = { x: 4, z: -2.5 }, count = 4, growth = null) {
+    const w = 1.0, h = 0.85, d = 1.0, gap = 0.20;
+    const total = count * w + (count - 1) * gap;
+    for (let i = 0; i < count; i++) {
+      const x = anchor.x + (i * (w + gap)) - total / 2 + w / 2;
+      const z = anchor.z;
+      const hh = h * (growth ? growth[i] : 1);
+      isoCube(parent, cam, x, 0, z, w, hh, d, SoR);
+      // 4-dot glyph on top
+      const [gx, gy] = cam(x, hh + 0.02, z);
+      const dotSize = 2.3;
+      for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) {
+        NS('rect', {
+          x: gx - dotSize*1.6 + dx * dotSize*1.6,
+          y: gy - dotSize*1.6 + dy * dotSize*1.6,
+          width: dotSize, height: dotSize,
+          fill: 'rgba(255,255,255,0.40)',
+        }, parent);
+      }
+    }
+  }
+
+  // Microsoft-tile pictograms on a SoC face (low-fi, recognisable corner shape)
+  // tools: outlook (O), excel (X), teams (T), sharepoint (S)
+  function msTile(parent, cam, x, y, z, kind, size = 0.8) {
+    const [px, py] = cam(x, y, z);
+    const s = size * 18; // approximate pixel size at scale 20
+    const colors = {
+      outlook: '#1B6BB5',
+      excel: '#21A366',
+      teams: '#6264A7',
+      sharepoint: '#038387',
+    };
+    NS('rect', { x: px - s/2, y: py - s/2, width: s, height: s, fill: colors[kind] || '#777', stroke: 'rgba(255,255,255,0.30)', 'stroke-width': 0.6, rx: 1.5 }, parent);
+    // single-letter glyph
+    const letter = { outlook: 'O', excel: 'X', teams: 'T', sharepoint: 'S' }[kind] || '·';
+    NS('text', {
+      x: px, y: py + s*0.18,
+      'text-anchor': 'middle',
+      fill: 'rgba(255,255,255,0.85)',
+      'font-family': 'ui-monospace, monospace',
+      'font-weight': 700,
+      'font-size': s * 0.55,
+    }, parent).textContent = letter;
+  }
+
+  // SoC plinth + 4 named tiles (Outlook, Excel, Teams, SharePoint) + a center
+  // chat/email mass to read as "this is the place where coordination happens"
+  function drawSoC(parent, cam, anchor = { x: -3, z: 3 }) {
+    // plinth
+    isoCube(parent, cam, anchor.x, 0, anchor.z, 3.4, 0.18, 3.4, SoC_PLINTH);
+    // 4 small tiles in 2x2 grid on top
+    const tileSize = 1.05;
+    const tileGap = 0.10;
+    const arr = ['outlook', 'excel', 'sharepoint', 'teams'];
+    let i = 0;
+    for (let gx = 0; gx < 2; gx++) {
+      for (let gz = 0; gz < 2; gz++) {
+        const ox = (gx - 0.5) * (tileSize + tileGap);
+        const oz = (gz - 0.5) * (tileSize + tileGap);
+        isoCube(parent, cam, anchor.x + ox, 0.18, anchor.z + oz, tileSize, 0.18, tileSize, SoC);
+        // pictogram on top face
+        msTile(parent, cam, anchor.x + ox, 0.36 + 0.005, anchor.z + oz, arr[i], 0.6);
+        i++;
+      }
+    }
+  }
+
+  // Debris pile rendered as iso scraps clustered at a center
+  function drawDebris(parent, cam, center, count, spread = 1.6, seed = 0) {
+    const rng = mulberry32(seed);
+    const heap = [];
+    for (let i = 0; i < count; i++) {
+      const r = rng() * spread;
+      const ang = rng() * Math.PI * 2;
+      const x = center.x + Math.cos(ang) * r;
+      const z = center.z + Math.sin(ang) * r;
+      const y = (i % 6) * 0.05;
+      const palette = FRAG_PALETTES[Math.floor(rng() * FRAG_PALETTES.length)];
+      heap.push({ x, y, z, palette, rotate: (rng() - 0.5) * 60 });
+    }
+    heap.sort((a, b) => (a.x + a.z) - (b.x + b.z));
+    for (const f of heap) {
+      const w = 0.28 + rng() * 0.30;
+      const d = 0.22 + rng() * 0.28;
+      const h = 0.04 + rng() * 0.04;
+      isoCube(parent, cam, f.x, f.y, f.z, w, h, d, f.palette, f.rotate);
+    }
+  }
+
+  // Evidence stacks under each SoR cube: ordered cream tiles
+  function drawEvidenceStacks(parent, cam, sorAnchor = { x: 4, z: -2.5 }, count = 4, stackHeight = 0) {
+    const w = 1.0, gap = 0.20;
+    const total = count * w + (count - 1) * gap;
+    for (let i = 0; i < count; i++) {
+      const x = sorAnchor.x + (i * (w + gap)) - total / 2 + w / 2;
+      const z = sorAnchor.z + 1.4;
+      for (let k = 0; k < stackHeight; k++) {
+        const fp = FRAG_PALETTES[k % FRAG_PALETTES.length];
+        // soft cream surround
+        isoCube(parent, cam, x, k * 0.10, z, 0.95, 0.08, 0.65, CREAM);
+        // small color dot to retain "color = meaning"
+        const dot = cam(x, k * 0.10 + 0.085, z);
+        NS('circle', { cx: dot[0], cy: dot[1], r: 1.6, fill: fp.top, stroke: fp.stroke, 'stroke-width': 0.4 }, parent);
+      }
+    }
+  }
+
+  // Human silhouette — head + shoulders. Drops into iso plane via cam.
+  function human(parent, cam, x, z, height = 0.65) {
+    const head = cam(x, height, z);
+    const shoulder = cam(x, height * 0.78, z);
+    const base = cam(x, height * 0.40, z);
+    NS('circle', { cx: head[0], cy: head[1], r: 4, fill: '#454550', stroke: 'rgba(255,255,255,0.20)', 'stroke-width': 0.5 }, parent);
+    NS('path', {
+      d: `M${shoulder[0] - 6},${shoulder[1]} Q${shoulder[0]},${shoulder[1] - 6} ${shoulder[0] + 6},${shoulder[1]} L${base[0] + 4},${base[1]} L${base[0] - 4},${base[1]} Z`,
+      fill: '#2c2c34', stroke: 'rgba(255,255,255,0.18)', 'stroke-width': 0.5,
+    }, parent);
+  }
+
+  // Unifize blue plate — a thin slab that we'll vary representation per concept
+  function uniSlab(parent, cam, x, y, z, w, h, d, dim = false) {
+    isoCube(parent, cam, x, y, z, w, h, d, dim ? UNI_DIM : UNI);
+  }
+
+  // A Unifize NODE — a small blue cube with a glow halo at iso-screen position
+  function uniNode(parent, cam, x, y, z, sz = 0.5) {
+    const [px, py] = cam(x, y, z);
+    isoCube(parent, cam, x, y, z, sz, sz, sz, UNI);
+    NS('circle', { cx: px, cy: py - 3, r: 10, fill: 'rgba(61,122,255,0.10)', stroke: 'rgba(61,122,255,0.25)', 'stroke-width': 0.6 }, parent);
+  }
+
+  // Unifize THREAD — a thick blue line between two world points
+  function uniThread(parent, cam, p1, p2, opts = {}) {
+    const a = cam(p1[0], p1[1], p1[2]);
+    const b = cam(p2[0], p2[1], p2[2]);
+    const mid = [(a[0] + b[0]) / 2 + (opts.bowX || 0), (a[1] + b[1]) / 2 + (opts.bowY || -8)];
+    NS('path', {
+      d: `M${a[0]},${a[1]} Q${mid[0]},${mid[1]} ${b[0]},${b[1]}`,
+      fill: 'none',
+      stroke: opts.color || '#3D7AFF',
+      'stroke-width': opts.w || 1.4,
+      'stroke-linecap': 'round',
+      opacity: opts.opacity || 0.85,
+    }, parent);
+  }
+
+  // Camera-corner indicator: tiny iso compass showing the view's az/el
+  function cameraTag(parent, panelW, panelH, az, el, zoom) {
+    const cx = panelW - 56, cy = panelH - 26;
+    const tag = NS('g', { transform: `translate(${cx}, ${cy})` }, parent);
+    // 3 axes
+    const a = (Math.PI / 180) * az;
+    const e = (Math.PI / 180) * el;
+    const ca = Math.cos(a), sa = Math.sin(a);
+    const ce = Math.cos(e), se = Math.sin(e);
+    const project = (x, y, z) => {
+      const sxw = ca * x - sa * z;
+      const depth = sa * x + ca * z;
+      const syw = depth * se - y * ce;
+      return [sxw * 10, syw * 10];
+    };
+    const axes = [
+      { d: project(1, 0, 0), label: 'x' },
+      { d: project(0, 1, 0), label: 'y' },
+      { d: project(0, 0, 1), label: 'z' },
+    ];
+    for (const ax of axes) {
+      NS('line', { x1: 0, y1: 0, x2: ax.d[0], y2: ax.d[1], stroke: '#353540', 'stroke-width': 0.7 }, tag);
+      NS('circle', { cx: ax.d[0], cy: ax.d[1], r: 1.3, fill: '#454552' }, tag);
+    }
+    NS('text', {
+      x: 0, y: 22, 'text-anchor': 'middle', class: 'cam-tag',
+    }, tag).textContent = `${Math.round(az)}° / ${Math.round(el)}°`;
+    if (zoom && zoom !== 1) {
+      NS('text', {
+        x: 0, y: 32, 'text-anchor': 'middle', class: 'cam-tag',
+      }, tag).textContent = `×${zoom.toFixed(1)}`;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // SEEDED RNG
+  // ──────────────────────────────────────────────────────
+  function mulberry32(seed) {
+    let t = seed;
+    return function () {
+      t = (t + 0x6D2B79F5) >>> 0;
+      let x = t;
+      x = Math.imul(x ^ (x >>> 15), x | 1);
+      x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PANEL FRAME
+  // ──────────────────────────────────────────────────────
+  function drawPanel(parent, idx, panelW, panelH, cameraCfg, drawFn) {
+    const x = idx * panelW;
+    const g = NS('g', { transform: `translate(${x},0)` }, parent);
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3, class: 'panel-frame' }, g);
+    NS('text', {
+      x: 18, y: 22, class: 'panel-num',
+    }, g).textContent = `0${idx + 1}`;
+    const cx = panelW / 2;
+    const cy = panelH * 0.62;
+    const scale = (cameraCfg.scale || 18) * (cameraCfg.zoom || 1);
+    const cam = makeCam({
+      az: cameraCfg.az,
+      el: cameraCfg.el,
+      scale,
+      cx: cx + (cameraCfg.dx || 0),
+      cy: cy + (cameraCfg.dy || 0),
+    });
+    drawFn(g, cam, cameraCfg);
+    cameraTag(g, panelW, panelH, cameraCfg.az || 45, cameraCfg.el || 30, cameraCfg.zoom || 1);
+    return g;
+  }
+
+  // ──────────────────────────────────────────────────────
+  // SCENE COMMON — SoR + SoC + (optional debris/evidence)
+  // Used as a base for some concepts; varied per concept.
+  // ──────────────────────────────────────────────────────
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 01 — THE SWEEPER
+  // Unifize is a mechanical sweeper that physically lifts the
+  // debris pile near SoC and deposits it as ordered evidence
+  // rows under each SoR record. Camera pans low across floor
+  // then pulls back to reveal the full pickup → sort → bind.
+  // ══════════════════════════════════════════════════════
+  function concept01(strip, panelW, panelH) {
+    const cams = [
+      { az: 45, el: 30, zoom: 1.0 },     // wide iso, before
+      { az: 45, el: 12, zoom: 1.3, dy: -20 }, // tilt down to floor level, debris pile visible
+      { az: 30, el: 22, zoom: 1.5, dy: -10 }, // sweeper enters from left of SoC
+      { az: 45, el: 30, zoom: 1.1 },     // pulled back, sweeper carrying load
+      { az: 60, el: 45, zoom: 1.0 },     // overhead-ish: evidence rows now under each SoR
+    ];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam);
+        drawSoR(g, cam);
+        drawSoC(g, cam);
+        // human near SoC
+        human(g, cam, -3.2, 4.6);
+
+        // debris pile near SoC, shrinking panel-by-panel as sweeper picks it up
+        const debrisCount = [40, 50, 28, 12, 0][p];
+        drawDebris(g, cam, { x: -1.6, z: 2.2 }, debrisCount, 1.6, 100);
+
+        // floating coordination atoms above SoC (constant)
+        const arng = mulberry32(150);
+        const kinds = ['env', 'chat', 'doc', 'cal', 'at', 'call'];
+        for (let i = 0; i < 8; i++) {
+          const ax = -3 + (arng() - 0.5) * 3;
+          const ay = 1.2 + arng() * 1.0;
+          const az = 3 + (arng() - 0.5) * 3;
+          atom(g, cam, ax, ay, az, kinds[Math.floor(arng() * kinds.length)], FRAG_PALETTES[Math.floor(arng() * 4)]);
+        }
+
+        // ── Unifize sweeper element ──
+        if (p >= 2) {
+          // Sweeper position interpolates from near SoC to between
+          const swX = [0, 0, -0.6, 1.0, 2.4][p];
+          const swZ = [0, 0, 1.8, 0.8, -0.6][p];
+          // chassis
+          isoCube(g, cam, swX, 0, swZ, 1.5, 0.5, 1.0, UNI);
+          // arm rising
+          isoCube(g, cam, swX, 0.5, swZ, 0.25, 1.2, 0.25, UNI);
+          // grabber head
+          isoCube(g, cam, swX + 0.5, 1.55, swZ, 0.55, 0.20, 0.55, UNI);
+          // carried scrap on the grabber
+          isoCube(g, cam, swX + 0.5, 1.78, swZ, 0.40, 0.10, 0.40, FRAG_PALETTES[(p) % 4]);
+          // tread/floor trail behind it
+          for (let t = 0; t < 6; t++) {
+            const a = cam(swX - 1 - t * 0.4, 0.02, swZ - t * 0.2);
+            NS('circle', { cx: a[0], cy: a[1], r: 1.4, fill: 'rgba(61,122,255,0.30)' }, g);
+          }
+        }
+
+        // ── Evidence rows being built under each SoR cube ──
+        const evidence = [0, 0, 0, 2, 5][p];
+        drawEvidenceStacks(g, cam, { x: 4, z: -2.5 }, 4, evidence);
+
+        // Unifize threads from sweeper → evidence stacks → SoR records (final state)
+        if (p >= 3) {
+          for (let i = 0; i < 4; i++) {
+            const rx = 4 - 1.6 + i * 1.2;
+            uniThread(g, cam, [2.5, 0.4, -0.5], [rx, 0.45, -1.1], { bowY: -10, opacity: 0.5, w: 0.9 });
+          }
+        }
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 02 — THE AI JUNCTION FOUNDRY
+  // A small Unifize foundry sits between SoC and SoR. AI grows
+  // new dynamic junctions (square nodes) that route raw
+  // coordination atoms into stamped evidence ingots. Camera
+  // dollies in, then orbits the foundry, then pulls back.
+  // ══════════════════════════════════════════════════════
+  function concept02(strip, panelW, panelH) {
+    const cams = [
+      { az: 45, el: 30, zoom: 1.0 },        // wide
+      { az: 45, el: 30, zoom: 1.7, dx: 20 }, // dolly in toward gap
+      { az: 30, el: 30, zoom: 1.7, dx: 10 }, // orbit 1
+      { az: 60, el: 30, zoom: 1.7, dx: 10 }, // orbit 2
+      { az: 45, el: 30, zoom: 1.0 },        // pulled back
+    ];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam);
+        drawSoR(g, cam);
+        drawSoC(g, cam);
+        human(g, cam, -3.5, 4.7);
+
+        // debris pile (small, persistent residual)
+        drawDebris(g, cam, { x: -1.4, z: 2 }, [22, 18, 14, 10, 8][p], 1.5, 200);
+
+        // ── Foundry: a thin Unifize floor slab in the gap ──
+        if (p >= 1) {
+          isoCube(g, cam, 0.5, 0, 0.5, 4.5, 0.10, 3.5, UNI_DIM);
+        }
+
+        // ── AI junctions (growing count, growing complexity) ──
+        const junctionCount = [0, 2, 4, 6, 7][p];
+        const jrng = mulberry32(300);
+        const junctions = [];
+        for (let i = 0; i < junctionCount; i++) {
+          const jx = -1.0 + (i % 3) * 1.4 + (jrng() - 0.5) * 0.3;
+          const jz = -0.8 + Math.floor(i / 3) * 1.4 + (jrng() - 0.5) * 0.3;
+          junctions.push({ x: jx, z: jz });
+          uniNode(g, cam, jx, 0.20, jz, 0.45);
+        }
+
+        // ── Atoms streaming into the foundry from SoC ──
+        if (p >= 1) {
+          const atomCount = [0, 6, 9, 12, 14][p];
+          const arng = mulberry32(400 + p);
+          const kinds = ['env', 'chat', 'doc', 'cal', 'at'];
+          for (let i = 0; i < atomCount; i++) {
+            const t = i / atomCount;
+            // path from SoC to a random junction
+            const target = junctions[i % Math.max(junctions.length, 1)] || { x: 0, z: 0 };
+            const sx = -3 + (arng() - 0.5) * 1.5;
+            const sz = 3 + (arng() - 0.5) * 1.5;
+            const along = 0.3 + arng() * 0.5;
+            const ax = sx + (target.x - sx) * along;
+            const ay = 1.2 - along * 0.5;
+            const az_ = sz + (target.z - sz) * along;
+            atom(g, cam, ax, ay, az_, kinds[Math.floor(arng() * kinds.length)], FRAG_PALETTES[Math.floor(arng() * 4)]);
+            // trail
+            const ts = cam(sx, 1.4, sz), te = cam(ax, ay, az_);
+            NS('line', { x1: ts[0], y1: ts[1], x2: te[0], y2: te[1], stroke: 'rgba(200,180,140,0.15)', 'stroke-width': 0.5 }, g);
+          }
+        }
+
+        // ── Outbound evidence ingots from junctions to SoR ──
+        if (p >= 3) {
+          for (let i = 0; i < 4; i++) {
+            const rx = 4 - 1.6 + i * 1.2;
+            const j = junctions[i % junctions.length] || { x: 0, z: 0 };
+            uniThread(g, cam, [j.x, 0.4, j.z], [rx, 0.45, -1.1], { bowY: -6, opacity: 0.7, w: 1.0 });
+          }
+          drawEvidenceStacks(g, cam, { x: 4, z: -2.5 }, 4, [0, 0, 0, 2, 4][p]);
+        }
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 03 — THE AUDIT SPINE
+  // Unifize is a vertical spine running through the iso scene.
+  // Vertebrae (discs) at multiple heights bind decisions/
+  // evidence/approvals. Camera starts side-view (low el),
+  // tilts up to iso, then orbits around the spine.
+  // ══════════════════════════════════════════════════════
+  function concept03(strip, panelW, panelH) {
+    const cams = [
+      { az: 45, el: 0,  zoom: 1.2, dy: 20 },  // side
+      { az: 45, el: 15, zoom: 1.2, dy: 10 },  // tilt up
+      { az: 45, el: 30, zoom: 1.2 },          // iso
+      { az: 90, el: 30, zoom: 1.2 },          // orbit around spine
+      { az: 135, el: 30, zoom: 1.0 },         // orbit further, pull back
+    ];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam);
+        drawSoR(g, cam);
+        drawSoC(g, cam);
+        human(g, cam, -3.5, 4.7);
+
+        // ── Spine: vertical Unifize column in the gap (always present from p=0)
+        const spineX = 0.5, spineZ = 0.5;
+        for (let s = 0; s < 6; s++) {
+          isoCube(g, cam, spineX, s * 0.45, spineZ, 0.32, 0.40, 0.32, UNI);
+        }
+
+        // ── Vertebrae: wider discs at decision heights
+        const vertebrae = [
+          { y: 0.30, fp: FRAG_PALETTES[0] }, // approvals
+          { y: 1.15, fp: FRAG_PALETTES[1] }, // resolved truth
+          { y: 2.00, fp: FRAG_PALETTES[2] }, // evidence
+        ];
+        for (let vi = 0; vi < (p >= 1 ? vertebrae.length : 0); vi++) {
+          const v = vertebrae[vi];
+          isoCube(g, cam, spineX, v.y, spineZ, 1.4, 0.18, 1.4, UNI);
+          // color dot on vertebra (meaning)
+          const dot = cam(spineX, v.y + 0.20, spineZ);
+          NS('circle', { cx: dot[0], cy: dot[1], r: 2.5, fill: v.fp.top, stroke: v.fp.stroke, 'stroke-width': 0.5 }, g);
+        }
+
+        // ── Threads from SoC chaos through vertebrae to SoR ──
+        if (p >= 2) {
+          const trng = mulberry32(500 + p);
+          for (let i = 0; i < 8; i++) {
+            const v = vertebrae[i % vertebrae.length];
+            const sx = -3 + (trng() - 0.5) * 2.5;
+            const sz = 3 + (trng() - 0.5) * 2.5;
+            const sy = 1.2 + trng() * 0.8;
+            uniThread(g, cam, [sx, sy, sz], [spineX, v.y + 0.10, spineZ], { color: '#3D7AFF', opacity: 0.4, w: 0.7 });
+          }
+          // outbound: from spine top vertebra to each SoR cube
+          for (let i = 0; i < 4; i++) {
+            const rx = 4 - 1.6 + i * 1.2;
+            const v = vertebrae[i % vertebrae.length];
+            uniThread(g, cam, [spineX, v.y + 0.10, spineZ], [rx, 0.45, -1.1], { color: '#3D7AFF', opacity: 0.7, w: 1.0 });
+          }
+        }
+
+        // ── Debris ── on opposite side from spine
+        drawDebris(g, cam, { x: -1.4, z: 2.2 }, [24, 18, 14, 12, 10][p], 1.4, 600);
+        // ── Evidence growing under SoR ──
+        drawEvidenceStacks(g, cam, { x: 4, z: -2.5 }, 4, [0, 0, 0, 1, 3][p]);
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 04 — THE SUBTERRANEAN STREAM
+  // Unifize is a glowing river that runs BELOW the floor in
+  // the gap. Falling coordination debris drops into the
+  // stream and emerges as evidence at each SoR record.
+  // Camera starts top-down, tilts to iso, then drops below.
+  // ══════════════════════════════════════════════════════
+  function concept04(strip, panelW, panelH) {
+    const cams = [
+      { az: 45, el: 75, zoom: 1.1 },   // near top-down
+      { az: 45, el: 50, zoom: 1.1 },   // tilt to mid
+      { az: 45, el: 25, zoom: 1.2 },   // standard iso
+      { az: 45, el: 10, zoom: 1.3, dy: -25 },  // very low — see "underneath"
+      { az: 45, el: 30, zoom: 1.0 },   // pulled back
+    ];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam);
+        drawSoR(g, cam);
+        drawSoC(g, cam);
+        human(g, cam, -3.5, 4.7);
+
+        // ── Stream beneath the floor: a wide, thin Unifize slab BELOW y=0 ──
+        // Visible because we render it slightly recessed; in panel 3-4 it's
+        // explicitly exposed by camera angle.
+        const streamY = -0.55;
+        isoCube(g, cam, 0.5, streamY, 0.5, 5.0, 0.30, 2.0, UNI);
+        // "current" markers along the stream
+        for (let i = 0; i < 5; i++) {
+          const sx = -1.5 + i * 1.0;
+          const dot = cam(sx, streamY + 0.30, 0.5);
+          NS('circle', { cx: dot[0], cy: dot[1], r: 1.5, fill: 'rgba(255,255,255,0.6)' }, g);
+        }
+
+        // ── debris drops INTO the stream ──
+        const debrisCount = [40, 30, 20, 14, 10][p];
+        drawDebris(g, cam, { x: -1.4, z: 2.2 }, debrisCount, 1.4, 700);
+        // a few "in transit" debris pieces caught mid-fall above stream
+        if (p >= 1) {
+          const drng = mulberry32(800 + p);
+          for (let i = 0; i < 6; i++) {
+            const x = -0.8 + drng() * 2.6;
+            const y = drng() * 0.5;
+            const z = 0.2 + drng() * 1.0;
+            const fp = FRAG_PALETTES[Math.floor(drng() * 4)];
+            isoCube(g, cam, x, y, z, 0.22, 0.05, 0.20, fp, (drng() - 0.5) * 60);
+          }
+        }
+
+        // ── evidence emerging at SoR (cream tiles RISING from stream) ──
+        if (p >= 2) {
+          drawEvidenceStacks(g, cam, { x: 4, z: -2.5 }, 4, [0, 0, 2, 3, 4][p]);
+          // rising filaments from stream → each SoR cube
+          for (let i = 0; i < 4; i++) {
+            const rx = 4 - 1.6 + i * 1.2;
+            uniThread(g, cam, [3.0, streamY + 0.3, 0.0], [rx, 0.45, -1.1], { color: '#3D7AFF', opacity: 0.6, w: 0.9 });
+          }
+        }
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 05 — THE BEACON MESH
+  // Unifize is a mesh of overhead beacons. Coordination
+  // signals from SoC are intercepted by beacons, named, and
+  // routed to specific SoR records.
+  // Camera starts looking up at the mesh, then iso, then orbits.
+  // ══════════════════════════════════════════════════════
+  function concept05(strip, panelW, panelH) {
+    const cams = [
+      { az: 45, el: -5, zoom: 1.0, dy: -30 },  // looking up at mesh from below
+      { az: 45, el: 15, zoom: 1.0, dy: -10 },  // mid
+      { az: 45, el: 30, zoom: 1.0 },           // standard iso
+      { az: 30, el: 45, zoom: 1.0 },           // higher angle
+      { az: 60, el: 30, zoom: 1.0 },           // orbit
+    ];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam);
+        drawSoR(g, cam);
+        drawSoC(g, cam);
+        human(g, cam, -3.5, 4.7);
+
+        // ── Beacon mesh: a 3×3 grid of small Unifize nodes overhead ──
+        const meshY = 3.5;
+        const beacons = [];
+        for (let gx = -1; gx <= 1; gx++) {
+          for (let gz = -1; gz <= 1; gz++) {
+            const bx = 0.5 + gx * 1.6;
+            const bz = 0.5 + gz * 1.6;
+            beacons.push([bx, meshY, bz]);
+          }
+        }
+        for (const b of beacons) {
+          uniNode(g, cam, b[0], b[1], b[2], 0.30);
+        }
+        // mesh lines connecting beacons (horizontal)
+        for (let gx = -1; gx <= 1; gx++) {
+          for (let gz = -1; gz <= 1; gz++) {
+            const a = cam(0.5 + gx * 1.6, meshY, 0.5 + gz * 1.6);
+            // right neighbor
+            if (gx < 1) {
+              const b = cam(0.5 + (gx + 1) * 1.6, meshY, 0.5 + gz * 1.6);
+              NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(61,122,255,0.35)', 'stroke-width': 0.7 }, g);
+            }
+            if (gz < 1) {
+              const b = cam(0.5 + gx * 1.6, meshY, 0.5 + (gz + 1) * 1.6);
+              NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: 'rgba(61,122,255,0.35)', 'stroke-width': 0.7 }, g);
+            }
+          }
+        }
+
+        // ── Signals from SoC rising to beacons (only some intercepted) ──
+        if (p >= 1) {
+          const srng = mulberry32(1000 + p);
+          const signals = [4, 7, 10, 11, 12][p];
+          const kinds = ['env', 'chat', 'doc', 'cal', 'at'];
+          for (let i = 0; i < signals; i++) {
+            const sx = -3 + (srng() - 0.5) * 2.5;
+            const sz = 3 + (srng() - 0.5) * 2.5;
+            const sy = 1.4 + srng() * 1.6;
+            const b = beacons[Math.floor(srng() * beacons.length)];
+            // partial-progress atom on its way up
+            const along = 0.4 + srng() * 0.5;
+            const ax = sx + (b[0] - sx) * along;
+            const az_ = sz + (b[2] - sz) * along;
+            const ay = sy + (b[1] - sy) * along;
+            atom(g, cam, ax, ay, az_, kinds[Math.floor(srng() * kinds.length)], FRAG_PALETTES[Math.floor(srng() * 4)]);
+            // faint trail
+            const ts = cam(sx, sy, sz), te = cam(ax, ay, az_);
+            NS('line', { x1: ts[0], y1: ts[1], x2: te[0], y2: te[1], stroke: 'rgba(200,180,140,0.12)', 'stroke-width': 0.5 }, g);
+          }
+        }
+
+        // ── Down-routes from beacons to each SoR record ──
+        if (p >= 2) {
+          for (let i = 0; i < 4; i++) {
+            const rx = 4 - 1.6 + i * 1.2;
+            const b = beacons[(i * 3 + 1) % beacons.length];
+            uniThread(g, cam, b, [rx, 0.95, -1.7], { color: '#3D7AFF', opacity: 0.7, w: 1.0, bowY: -20 });
+          }
+          drawEvidenceStacks(g, cam, { x: 4, z: -2.5 }, 4, [0, 0, 1, 3, 4][p]);
+        }
+
+        // ── Debris persists below SoC (smaller — most went up to mesh) ──
+        drawDebris(g, cam, { x: -1.4, z: 2.2 }, [30, 20, 14, 10, 8][p], 1.3, 1100);
+      });
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 06 — THE LIVING TREE
+  // Unifize is a growing tree in the gap. Branches (AI
+  // agents) extend toward SoC, pick up coordination
+  // fragments, label them, and carry them back to specific
+  // SoR records. Camera zooms in, orbits, then pulls back.
+  // ══════════════════════════════════════════════════════
+  function concept06(strip, panelW, panelH) {
+    const cams = [
+      { az: 45, el: 30, zoom: 1.0 },
+      { az: 45, el: 30, zoom: 1.5, dx: 10 },
+      { az: 75, el: 30, zoom: 1.5, dx: 0 },   // orbit
+      { az: 105, el: 30, zoom: 1.5, dx: -10 }, // further orbit
+      { az: 45, el: 30, zoom: 1.0 },           // pulled back
+    ];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam);
+        drawSoR(g, cam);
+        drawSoC(g, cam);
+        human(g, cam, -3.5, 4.7);
+
+        // ── Trunk: vertical Unifize column in the gap ──
+        const trunkX = 0.5, trunkZ = 0.5;
+        if (p >= 1) {
+          for (let s = 0; s < 4; s++) {
+            isoCube(g, cam, trunkX, s * 0.45, trunkZ, 0.30, 0.40, 0.30, UNI);
+          }
+        }
+
+        // ── Branches reaching out to SoC (left) and SoR (right) ──
+        const branchY = 1.6;
+        const branchTargets = [
+          // toward SoC tiles (left)
+          { dx: -3.0, dz: 3.0, side: 'soc' },
+          { dx: -2.5, dz: 1.5, side: 'soc' },
+          { dx: -2.0, dz: 3.5, side: 'soc' },
+          // toward SoR records (right)
+          { dx: 2.5, dz: -1.5, side: 'sor' },
+          { dx: 3.0, dz: -3.0, side: 'sor' },
+          { dx: 3.5, dz: -2.0, side: 'sor' },
+        ];
+        const branchCount = [0, 2, 4, 5, 6][p];
+        for (let i = 0; i < branchCount; i++) {
+          const b = branchTargets[i];
+          const start = [trunkX, branchY, trunkZ];
+          const end = [b.dx, branchY * 0.5, b.dz];
+          uniThread(g, cam, start, end, { color: '#3D7AFF', opacity: 0.8, w: 1.3, bowY: -16 });
+          // small "hand" node at branch tip
+          if (b.side === 'soc') {
+            const fp = FRAG_PALETTES[i % 4];
+            // grabbed fragment
+            isoCube(g, cam, b.dx, branchY * 0.5 - 0.1, b.dz, 0.32, 0.10, 0.28, fp);
+          } else {
+            // labeled evidence delivered
+            isoCube(g, cam, b.dx, branchY * 0.5 - 0.1, b.dz, 0.40, 0.10, 0.36, CREAM);
+            const dot = cam(b.dx, branchY * 0.5 + 0.02, b.dz);
+            const fp = FRAG_PALETTES[i % 4];
+            NS('circle', { cx: dot[0], cy: dot[1], r: 1.6, fill: fp.top, stroke: fp.stroke, 'stroke-width': 0.4 }, g);
+          }
+        }
+
+        // ── Debris (large initially, shrinks as branches pick up) ──
+        drawDebris(g, cam, { x: -1.6, z: 2.2 }, [42, 32, 22, 14, 10][p], 1.6, 1300);
+
+        // ── Evidence rows under each SoR cube ──
+        drawEvidenceStacks(g, cam, { x: 4, z: -2.5 }, 4, [0, 0, 1, 2, 4][p]);
+
+        // Atoms still floating above SoC
+        const arng = mulberry32(1450 + p);
+        const kinds = ['env', 'chat', 'doc', 'cal', 'at'];
+        for (let i = 0; i < 8; i++) {
+          const ax = -3 + (arng() - 0.5) * 3;
+          const ay = 1.2 + arng() * 1.0;
+          const az = 3 + (arng() - 0.5) * 3;
+          atom(g, cam, ax, ay, az, kinds[Math.floor(arng() * kinds.length)], FRAG_PALETTES[Math.floor(arng() * 4)]);
+        }
+      });
+    });
+  }
+
+  // ──────────────────────────────────────────────────────
+  // RENDER ALL CONCEPTS
+  // ──────────────────────────────────────────────────────
+  const concepts = [
+    { id: 'p01', title: 'THE SWEEPER', fn: concept01 },
+    { id: 'p02', title: 'THE AI JUNCTION FOUNDRY', fn: concept02 },
+    { id: 'p03', title: 'THE AUDIT SPINE', fn: concept03 },
+    { id: 'p04', title: 'THE SUBTERRANEAN STREAM', fn: concept04 },
+    { id: 'p05', title: 'THE BEACON MESH', fn: concept05 },
+    { id: 'p06', title: 'THE LIVING TREE', fn: concept06 },
+  ];
+
+  const main = document.getElementById('main');
+  const toc = document.getElementById('toc');
+  concepts.forEach((c, idx) => {
+    const a = document.createElement('a');
+    a.href = `#${c.id}`;
+    a.textContent = `${String(idx + 1).padStart(2, '0')} ${c.title}`;
+    toc.appendChild(a);
+
+    const section = document.createElement('section');
+    section.className = 'concept';
+    section.id = c.id;
+
+    const h = document.createElement('div');
+    h.className = 'title';
+    h.innerHTML = `<span class="num">${String(idx + 1).padStart(2, '0')}</span>${c.title}`;
+    section.appendChild(h);
+
+    const stripDiv = document.createElement('div');
+    stripDiv.className = 'strip';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const panels = 5;
+    const panelW = 400;
+    const panelH = 480;
+    svg.setAttribute('viewBox', `0 0 ${panels * panelW} ${panelH}`);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    c.fn(svg, panelW, panelH);
+    stripDiv.appendChild(svg);
+    section.appendChild(stripDiv);
+    main.appendChild(section);
+  });
+})();
+</script>
+</body>
+</html>

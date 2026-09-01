@@ -22,11 +22,11 @@ const iconMap: Record<string, React.ElementType> = {
     FileText, ShieldCheck, GitMerge, Factory, Wrench, Plane, Car, Microscope, Sparkles, Utensils, FlaskConical, Stethoscope, Pill, Video, Briefcase, BookOpen, Camera, Scale, HelpCircle, Code, Info
 };
 
-const solidIconClass = "size-[15px] text-zinc-400 transition-colors group-hover/nav-item:text-[#0052FF] [stroke-width:2.2] [&_path]:fill-current [&_path]:stroke-current [&_circle]:fill-current [&_circle]:stroke-current [&_rect]:fill-current [&_rect]:stroke-current";
+const solidIconClass = "size-[15px] text-zinc-400 transition-colors group-hover/nav-item:text-cta [stroke-width:2.2] [&_path]:fill-current [&_path]:stroke-current [&_circle]:fill-current [&_circle]:stroke-current [&_rect]:fill-current [&_rect]:stroke-current";
 const productIconClass = "size-[18px] text-[var(--product-icon-color)] [stroke-width:2.2] [&_path]:fill-current [&_path]:stroke-current [&_circle]:fill-current [&_circle]:stroke-current [&_rect]:fill-current [&_rect]:stroke-current";
-const mobileCardIconClass = "size-[15px] text-zinc-400 transition-colors group-hover/mobile-item:text-[#0052FF] [stroke-width:2.2] [&_path]:fill-current [&_path]:stroke-current [&_circle]:fill-current [&_circle]:stroke-current [&_rect]:fill-current [&_rect]:stroke-current";
+const mobileCardIconClass = "size-[15px] text-zinc-400 transition-colors group-hover/mobile-item:text-cta [stroke-width:2.2] [&_path]:fill-current [&_path]:stroke-current [&_circle]:fill-current [&_circle]:stroke-current [&_rect]:fill-current [&_rect]:stroke-current";
 const mobileProductIconClass = "size-[15px] text-[var(--product-icon-color)] [stroke-width:2.2] [&_path]:fill-current [&_path]:stroke-current [&_circle]:fill-current [&_circle]:stroke-current [&_rect]:fill-current [&_rect]:stroke-current";
-const mobilePrimaryIconClass = "size-[18px] text-zinc-400 transition-colors group-hover/mobile-primary:text-[#0052FF] [stroke-width:2.2] [&_path]:fill-current [&_path]:stroke-current [&_circle]:fill-current [&_circle]:stroke-current [&_rect]:fill-current [&_rect]:stroke-current";
+const mobilePrimaryIconClass = "size-[18px] text-zinc-400 transition-colors group-hover/mobile-primary:text-cta [stroke-width:2.2] [&_path]:fill-current [&_path]:stroke-current [&_circle]:fill-current [&_circle]:stroke-current [&_rect]:fill-current [&_rect]:stroke-current";
 const productDropdownThemes: Record<string, { iconColor: string; iconBg: string; iconBgHover: string }> = {
     "Document Management System": {
         iconColor: "#EA7432",
@@ -135,7 +135,7 @@ const ListItem = React.forwardRef<
                 >
                     <div className="flex items-start gap-2.5">
                         {Icon && (
-                            <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 transition-colors group-hover/nav-item:bg-[#0052FF]/10">
+                            <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 transition-colors group-hover/nav-item:bg-cta/10">
                                 <Icon className={solidIconClass} aria-hidden="true" />
                             </div>
                         )}
@@ -191,7 +191,7 @@ function MobileMenuCard({
                         "flex size-8 shrink-0 items-center justify-center rounded-md transition-colors",
                         productTheme
                             ? "border border-transparent bg-[var(--product-icon-bg)] group-hover/mobile-item:bg-[var(--product-icon-bg-hover)]"
-                            : "bg-zinc-100 group-hover/mobile-item:bg-[#0052FF]/10"
+                            : "bg-zinc-100 group-hover/mobile-item:bg-cta/10"
                     )}
                 >
                     <Icon className={productTheme ? mobileProductIconClass : mobileCardIconClass} aria-hidden="true" />
@@ -369,7 +369,7 @@ export default function Navbar() {
                             </Button>
                             <Button
                                 size="sm"
-                                className="h-[38px] px-[18px] bg-[#0052FF] hover:bg-[#0052FF] text-white text-[13px] font-medium rounded-lg"
+                                className="h-[38px] px-[18px] bg-cta hover:bg-cta/90 text-cta-foreground text-[13px] font-medium rounded-lg"
                                 onClick={openDemoModal}
                             >
                                 Book a Demo
@@ -512,7 +512,7 @@ export default function Navbar() {
 
                                     <div className="mt-auto pt-2">
                                         <Button
-                                            className="h-11 w-full !rounded-[12px] bg-[#0052FF] text-[13px] font-medium text-white hover:bg-[#0052FF]"
+                                            className="h-11 w-full !rounded-[12px] bg-cta text-[13px] font-medium text-cta-foreground hover:bg-cta/90"
                                             style={{ borderRadius: "12px" }}
                                             onClick={() => {
                                                 setMobileMenuOpen(false);

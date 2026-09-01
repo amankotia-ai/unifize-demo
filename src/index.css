@@ -37,6 +37,59 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Semantic tokens — theme-able across pages */
+  --cta: #0052FF;
+  --cta-foreground: #ffffff;
+  --heading: #0f172a;
+  --body-muted: #64748b;
+  --surface-tint: #EEF3FF;
+  --surface-subtle: #F9FBFF;
+}
+
+/* ── Benchling enterprise theme (scoped to enterprise pages) ── */
+.benchling-theme {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #000650;
+  --primary-foreground: #ffffff;
+  --secondary: #000db5;
+  --secondary-foreground: #ffffff;
+  --muted: #f4f4f2;
+  --muted-foreground: #6b6b68;
+  --accent: #c2b8ff;
+  --accent-foreground: #000650;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #d6d7d1;
+  --input: #d6d7d1;
+  --ring: #000db5;
+  --chart-1: #000db5;
+  --chart-2: #c2b8ff;
+  --chart-3: #000650;
+  --chart-4: #4a4de7;
+  --chart-5: #8b83cc;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #000650;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #c2b8ff;
+  --sidebar-accent-foreground: #000650;
+  --sidebar-border: #d6d7d1;
+  --sidebar-ring: #000db5;
+
+  /* Benchling semantic overrides */
+  --cta: #000db5;
+  --cta-foreground: #ffffff;
+  --heading: #000650;
+  --body-muted: #6b6b68;
+  --surface-tint: #ede9ff;
+  --surface-subtle: #fafafa;
+
+  font-family: graphik, arial, helvetica, sans-serif;
 }
 
 @theme inline {
@@ -47,6 +100,34 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Benchling section spacing (available on enterprise pages) */
+  --spacing-section-3xs: 0.0625rem;
+  --spacing-section-2xs: 1.75rem;
+  --spacing-section-xs: 3.75rem;
+  --spacing-section-sm: 5.4375rem;
+  --spacing-section-md: 6.5rem;
+  --spacing-section-lg: 7.5rem;
+  --spacing-section-xl: 8.75rem;
+  --spacing-section-2xl: 10.5rem;
+  --spacing-section-3xl: 12.4375rem;
+  --spacing-section-4xl: 16.75rem;
+  --spacing-section-5xl: 18.75rem;
+  --spacing-section-6xl: 20rem;
+
+  /* Benchling font families (use via font-graphik / font-gt-america utilities) */
+  --font-graphik: graphik, arial, helvetica, sans-serif;
+  --font-gt-america: "GT America", monospace;
+
+  /* Semantic color tokens */
+  --color-cta: var(--cta);
+  --color-cta-foreground: var(--cta-foreground);
+  --color-heading: var(--heading);
+  --color-body-muted: var(--body-muted);
+  --color-surface-tint: var(--surface-tint);
+  --color-surface-subtle: var(--surface-subtle);
+
+  /* Color tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -219,13 +300,13 @@ html {
   width: 1.75rem;
   flex-shrink: 0;
   border-radius: 0.5625rem;
-  background-color: rgb(0 82 255 / 10%);
+  background-color: color-mix(in srgb, var(--cta) 10%, transparent);
 }
 
 .section-pill-icon {
   width: 0.75rem;
   height: 0.75rem;
-  color: #0052ff;
+  color: var(--cta);
   stroke-width: 2.2;
 }
 

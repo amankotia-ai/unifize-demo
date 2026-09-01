@@ -121,10 +121,10 @@ export default function BenefitsTabsSection() {
                         </span>
                         <span className="section-pill-label">Key Benefits</span>
                     </motion.div>
-                    <motion.h2 variants={itemVariants} className="mx-auto max-w-[22ch] px-2 text-balance text-[28px] font-semibold leading-[1.22] tracking-[-0.015em] text-black sm:px-0 sm:text-[34px] lg:text-[36px] lg:leading-[1.2]">
+                    <motion.h2 variants={itemVariants} className="mx-auto max-w-[22ch] px-2 text-balance text-[28px] font-semibold leading-[1.22] tracking-[-0.015em] text-heading sm:px-0 sm:text-[34px] lg:text-[36px] lg:leading-[1.2]">
                         Deliver products on time, on budget, and with lower risk
                     </motion.h2>
-                    <motion.p variants={itemVariants} className="mx-auto mt-5 max-w-[58ch] text-pretty text-[14px] font-normal leading-[1.65] text-black sm:mt-6 sm:text-[15px] lg:text-[17px] lg:leading-[1.72]">
+                    <motion.p variants={itemVariants} className="mx-auto mt-5 max-w-[58ch] text-pretty text-[14px] font-normal leading-[1.65] text-heading sm:mt-6 sm:text-[15px] lg:text-[17px] lg:leading-[1.72]">
                         Unifize gives FDA- and ISO-compliant organizations what they need to excel in complex regulatory environments and deliver exceptional customer experiences.
                     </motion.p>
                 </div>
@@ -141,7 +141,7 @@ export default function BenefitsTabsSection() {
                                         key={tab.value}
                                         value={tab.value}
                                         className={cn(
-                                            "h-auto min-w-max flex-none rounded-full border border-[#EEF3FF] bg-white px-4 py-2.5 text-[13px] font-medium text-slate-600 transition-colors duration-150 sm:min-w-0 sm:flex-1 sm:text-sm lg:flex-none",
+                                            "h-auto min-w-max flex-none rounded-full border border-[#EEF3FF] bg-white px-4 py-2.5 text-[13px] font-medium text-body-muted transition-colors duration-150 sm:min-w-0 sm:flex-1 sm:text-sm lg:flex-none",
                                             getActiveTabClass(tab.value)
                                         )}
                                     >
@@ -175,10 +175,10 @@ export default function BenefitsTabsSection() {
                                                             aria-hidden="true"
                                                         />
                                                     </span>
-                                                    <h3 className="mt-4 text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-black sm:text-[26px] lg:text-[28px]">
+                                                    <h3 className="mt-4 text-balance text-[24px] font-semibold leading-[1.24] tracking-[-0.015em] text-heading sm:text-[26px] lg:text-[28px]">
                                                         {activeCard.heading}
                                                     </h3>
-                                                    <p className="mt-4 max-w-[58ch] text-pretty text-[14px] leading-[1.65] text-slate-600 sm:text-[15px] lg:text-[16px]">
+                                                    <p className="mt-4 max-w-[58ch] text-pretty text-[14px] leading-[1.65] text-body-muted sm:text-[15px] lg:text-[16px]">
                                                         {activeCard.description}
                                                     </p>
                                                     </div>
@@ -196,10 +196,10 @@ export default function BenefitsTabsSection() {
                                                                         <FeatureIcon className="size-4" aria-hidden="true" />
                                                                     </span>
                                                                     <div>
-                                                                        <h4 className="text-[15px] font-semibold leading-tight tracking-[-0.015em] text-slate-900 sm:text-base">
+                                                                        <h4 className="text-[15px] font-semibold leading-tight tracking-[-0.015em] text-heading sm:text-base">
                                                                             {feature.title}
                                                                         </h4>
-                                                                        <p className="mt-1 text-pretty text-[13px] leading-[1.55] text-slate-600 sm:text-[14px]">
+                                                                        <p className="mt-1 text-pretty text-[13px] leading-[1.55] text-body-muted sm:text-[14px]">
                                                                             {feature.desc}
                                                                         </p>
                                                                     </div>

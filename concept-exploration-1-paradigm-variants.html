@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Concept Exploration 1 — Paradigm Variants (Observatory + Excavation)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Kalam:wght@300;400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/roughjs@4.6.6/bundled/rough.js"></script>
+<style>
+  :root {
+    --paper:        #f4ede0;
+    --paper-edge:   #ebe2d0;
+    --ink:          #1f1d18;
+    --ink-soft:     #4b463b;
+    --ink-faint:    #8a8270;
+    --rule:         #d8cdb3;
+    --highlight:    #f0c84a;
+    --red:          #b3392a;
+    --blue:         #25497d;
+    --green:        #4a6a31;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--paper); }
+  body {
+    font-family: 'Kalam', 'Caveat', sans-serif;
+    color: var(--ink);
+    line-height: 1.45;
+    background-color: var(--paper);
+    background-image: radial-gradient(rgba(60,50,30,0.10) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: 11px 11px;
+    min-height: 100vh;
+    padding: 56px 48px 96px;
+  }
+  .sheet { max-width: 1480px; margin: 0 auto; position: relative; }
+
+  .masthead {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 32px;
+    padding-bottom: 14px;
+    border-bottom: 1.5px dashed var(--rule);
+    margin-bottom: 36px;
+  }
+  .stamp {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: flex; gap: 14px; align-items: center;
+  }
+  .stamp .corner {
+    border: 1.2px solid var(--ink-faint);
+    padding: 3px 8px; border-radius: 2px;
+  }
+  h1.title {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: clamp(40px, 5.4vw, 76px);
+    line-height: 0.95; letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  h1.title em {
+    font-style: normal;
+    color: var(--red);
+    text-decoration: underline wavy var(--red);
+    text-underline-offset: 6px;
+    text-decoration-thickness: 1px;
+  }
+  .intent {
+    font-family: 'Kalam', sans-serif;
+    font-size: 17px; max-width: 380px;
+    color: var(--ink-soft);
+    text-align: right;
+    padding-bottom: 6px;
+  }
+  .intent b {
+    background: linear-gradient(180deg, transparent 55%, rgba(240,200,74,0.6) 55%, rgba(240,200,74,0.6) 88%, transparent 88%);
+    padding: 0 2px; font-weight: 700; color: var(--ink);
+  }
+
+  .section-head {
+    margin: 72px 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1.5px dashed var(--rule);
+  }
+  .section-head h2 {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 52px;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .section-head .number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; letter-spacing: 0.18em;
+    color: var(--ink-faint); margin-bottom: 6px;
+  }
+  .section-head .blurb {
+    font-family: 'Kalam', sans-serif;
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    max-width: 760px;
+  }
+  .section-head .blurb b {
+    background: linear-gradient(180deg, transparent 55%, rgba(240,200,74,0.55) 55%, rgba(240,200,74,0.55) 88%, transparent 88%);
+    padding: 0 2px; font-weight: 700; color: var(--ink);
+  }
+
+  .coffee {
+    position: absolute;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%,
+      rgba(120, 75, 30, 0.0) 30%,
+      rgba(120, 75, 30, 0.12) 55%,
+      rgba(120, 75, 30, 0.22) 68%,
+      rgba(120, 75, 30, 0.10) 75%,
+      rgba(120, 75, 30, 0.0) 88%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .grid-panels {
+    display: grid; grid-template-columns: 1fr; gap: 36px 40px;
+  }
+  .var-card {
+    background: var(--paper);
+    position: relative;
+    padding: 18px 22px 22px;
+  }
+  .var-card::before, .var-card::after {
+    content: '';
+    position: absolute;
+    width: 64px; height: 18px;
+    background: rgba(240,200,74,0.45);
+    border: 1px dashed rgba(120,90,30,0.35);
+    top: -6px;
+    transform: rotate(-3deg);
+    z-index: 2;
+  }
+  .var-card::before { left: 28px; }
+  .var-card::after { right: 28px; transform: rotate(2deg); }
+  .var-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 6px; padding-top: 4px;
+  }
+  .var-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    background: var(--paper-edge);
+    padding: 3px 7px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+  }
+  .var-title {
+    font-family: 'Caveat', cursive;
+    font-weight: 700; font-size: 34px;
+    line-height: 1; color: var(--ink);
+  }
+  .var-canvas {
+    width: 100%;
+    aspect-ratio: 1280 / 540;
+    display: flex; align-items: center; justify-content: center;
+    margin: 8px 0 14px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0)),
+      var(--paper);
+    border: 1.2px dashed var(--rule);
+    position: relative;
+  }
+  .var-canvas svg { width: 100%; height: 100%; display: block; }
+
+  .sketch-text { font-family: 'Kalam', sans-serif; font-size: 14px; font-weight: 700; fill: var(--ink); }
+  .sketch-text.white { fill: var(--paper); }
+  .sketch-zone { font-family: 'Caveat', cursive; font-size: 26px; font-weight: 700; fill: var(--ink-soft); }
+  .sketch-cost { font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700; fill: var(--red); }
+  .sketch-tower-band { font-family: 'Kalam', sans-serif; font-size: 11px; font-weight: 700; fill: var(--paper); letter-spacing: 0.08em; }
+  .sketch-strata { font-family: 'Kalam', sans-serif; font-size: 11px; font-weight: 400; fill: var(--ink-soft); font-style: italic; }
+
+  @media (max-width: 1100px) { .grid-panels { grid-template-columns: 1fr; } }
+  @media (max-width: 760px)  { body { padding: 32px 22px 60px; } }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <header class="masthead">
+    <div>
+      <div class="stamp">
+        <span class="corner">Concept Sketch</span>
+        <span>Exploration 1</span>
+        <span>Paradigm Variants</span>
+      </div>
+      <h1 class="title">Same Floor.<br/>Two <em>Unifize</em> Geometries.</h1>
+    </div>
+    <p class="intent">
+      <b>SoR / SoC stay identical</b> across both. Coordination tax still rises inside SoC, atoms still hover, debris still piles between. The only thing that changes is <b>what Unifize is</b> and <b>where it sits</b> — neither version puts it in the gap between SoR and SoC.
+    </p>
+  </header>
+
+  <!-- ───────────────────────────────── PARADIGM 1 ───────────────────────────────── -->
+  <div class="section-head" style="position: relative;">
+    <div class="coffee" style="right: 4%; top: -8px;"></div>
+    <div class="number">PARADIGM 1</div>
+    <h2>The Observatory</h2>
+    <p class="blurb">Unifize is a standalone <b>tower</b> at the front of the scene — separate from SoR and SoC, never between them. Its <b>front facade</b> is the audit-trail surface. Capture filaments arc across the floor to the tower's base.</p>
+  </div>
+  <section style="position: relative;">
+    <div class="coffee" style="right: 6%; top: 40px;"></div>
+    <div class="grid-panels" id="grid-1"></div>
+  </section>
+
+  <!-- ───────────────────────────────── PARADIGM 2 ───────────────────────────────── -->
+  <div class="section-head" style="position: relative;">
+    <div class="coffee" style="left: 4%; top: -8px;"></div>
+    <div class="number">PARADIGM 2</div>
+    <h2>The Cutaway Excavation</h2>
+    <p class="blurb">The floor is <b>cut away</b> in front. Underneath: years of <b>buried strata</b> — color-coded fragments packed in horizontal layers. Unifize is the <b>box that sits over the cut</b> — it collects the buried records, then a <b>conveyor belt</b> extends out the front with clean audit-trail records riding on it.</p>
+  </div>
+  <section style="position: relative;">
+    <div class="coffee" style="left: 6%; top: 40px;"></div>
+    <div class="grid-panels" id="grid-2"></div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  // ──────────────────────────────────────────────────────
+  // CAMERA / HELPERS  (identical to uploaded sketch)
+  // ──────────────────────────────────────────────────────
+  function makeCam(opts) {
+    const az = (opts.az ?? 32) * Math.PI / 180;
+    const el = (opts.el ?? 35.264) * Math.PI / 180;
+    const scale = opts.scale ?? 13;
+    const cx = opts.cx ?? 0, cy = opts.cy ?? 0;
+    const lx = opts.lookX ?? 0, ly = opts.lookY ?? 0, lz = opts.lookZ ?? 0;
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const ce = Math.cos(el), se = Math.sin(el);
+    return (x, y, z) => {
+      const X = x - lx, Y = y - ly, Z = z - lz;
+      const sx = ca * X - sa * Z;
+      const depth = sa * X + ca * Z;
+      const sy = depth * se - Y * ce;
+      return [cx + sx * scale, cy + sy * scale];
+    };
+  }
+  function mulberry32(seed) {
+    let t = seed;
+    return function () {
+      t = (t + 0x6D2B79F5) >>> 0;
+      let x = t;
+      x = Math.imul(x ^ (x >>> 15), x | 1);
+      x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ── Palettes (sketch theme — same as uploaded) ────────
+  const SoR        = { top: '#e0dcd3', right: '#d1cdc3', front: '#c4c0b5', stroke: '#1f1d18', style: 'hachure' };
+  const SoR_PLINTH = { top: '#eae6dd', right: '#d8d4c9', front: '#cccccc', stroke: '#1f1d18', style: 'solid' };
+  const SoC_PLINTH = { top: '#eae6dd', right: '#d8d4c9', front: '#cccccc', stroke: '#1f1d18', style: 'solid' };
+  const SoC_TILE   = { top: '#d1cdc3', right: '#b0afa8', front: '#c4c0b5', stroke: '#1f1d18', style: 'hachure' };
+  const COST       = { top: '#f08080', right: '#b3392a', front: '#d65a4e', stroke: '#b3392a', style: 'zigzag' };
+  const UNI        = { top: '#a3c2f0', right: '#25497d', front: '#5c8bd6', stroke: '#25497d', style: 'solid' };
+  const UNI_DEEP   = { top: '#25497d', right: '#0f2444', front: '#183661', stroke: '#1f1d18', style: 'solid' };
+  const UNI_MID    = { top: '#6a8fcf', right: '#1b3863', front: '#3e6aae', stroke: '#1f1d18', style: 'solid' };
+  const CREAM      = { top: '#ffffff', right: '#e0e0e0', front: '#f0f0f0', stroke: '#1f1d18', style: 'solid' };
+  const FRAG = [
+    { top: '#f0c84a', right: '#b8921e', front: '#d9b036', stroke: '#b8921e' },
+    { top: '#6BB07C', right: '#2E5A38', front: '#4A8253', stroke: '#2E5A38' },
+    { top: '#7AA0E0', right: '#2E4D8A', front: '#4D72B8', stroke: '#2E4D8A' },
+    { top: '#D8635A', right: '#7A2B25', front: '#A8413A', stroke: '#7A2B25' },
+  ];
+
+  // ── Primitives ────────────────────────────────────────
+  function isoCube(parent, rc, cam, x, y, z, w, h, d, palette, rotate = 0) {
+    const hw = w/2, hd = d/2;
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const rot = (lx, lz) => [x + lx * cosR - lz * sinR, z + lx * sinR + lz * cosR];
+    const C = (lx, ly, lz) => {
+      const [wx, wz] = rot(lx, lz);
+      return cam(wx, y + ly, wz);
+    };
+    const A = C(-hw, 0, -hd), B = C(hw, 0, -hd), Cc = C(hw, 0, hd), D = C(-hw, 0, hd);
+    const E = C(-hw, h, -hd), F = C(hw, h, -hd), G = C(hw, h, hd), H = C(-hw, h, hd);
+    const style = palette.style || 'hachure';
+    const roughness = palette.roughness ?? 1.5;
+    parent.appendChild(rc.polygon([E, F, G, H], { fill: palette.top,   stroke: palette.stroke, strokeWidth: 1.5, fillStyle: style, hachureAngle: 60, hachureGap: 3, roughness }));
+    parent.appendChild(rc.polygon([D, Cc, G, H], { fill: palette.front, stroke: palette.stroke, strokeWidth: 1.5, fillStyle: style, hachureAngle: -60, hachureGap: 3, roughness }));
+    parent.appendChild(rc.polygon([Cc, B, F, G], { fill: palette.right, stroke: palette.stroke, strokeWidth: 1.5, fillStyle: style, hachureAngle: 0,  hachureGap: 3, roughness }));
+  }
+
+  function isoFloor(parent, rc, cam, half = 14, div = 14, opts = {}) {
+    const step = (half * 2) / div;
+    const skipFn = opts.skip; // optional (x, z) => boolean — if true, skip drawing through that point
+    for (let i = 0; i <= div; i++) {
+      const t = -half + i * step;
+      // x-lines run along z direction at constant world-x = t
+      const a = cam(t, 0, -half), b = cam(t, 0, half);
+      if (!skipFn || !skipFn(t, 'x')) {
+        parent.appendChild(rc.line(a[0], a[1], b[0], b[1], { stroke: 'rgba(60,50,30,0.15)', strokeWidth: 1, roughness: 2 }));
+      }
+      const c = cam(-half, 0, t), d = cam(half, 0, t);
+      if (!skipFn || !skipFn(t, 'z')) {
+        parent.appendChild(rc.line(c[0], c[1], d[0], d[1], { stroke: 'rgba(60,50,30,0.15)', strokeWidth: 1, roughness: 2 }));
+      }
+    }
+  }
+
+  function createText(x, y, textContent, className) {
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', x); text.setAttribute('y', y);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('class', className);
+    text.textContent = textContent;
+    return text;
+  }
+
+  // ── Zones ─────────────────────────────────────────────
+  function drawSoR(parent, rc, cam, anchor) {
+    const labels = ['QMS', 'ERP', 'PLM', 'MES'];
+    const cw = 1.6, ch = 1.4, gap = 0.20;
+    const cols = 2, rows = 2;
+    const totalW = cols * cw + (cols - 1) * gap;
+    const totalD = rows * cw + (rows - 1) * gap;
+    isoCube(parent, rc, cam, anchor.x, 0, anchor.z, totalW + 0.6, 0.22, totalD + 0.6, SoR_PLINTH);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const x = anchor.x + (c - 0.5) * (cw + gap);
+      const z = anchor.z + (r - 0.5) * (cw + gap);
+      isoCube(parent, rc, cam, x, 0.22, z, cw, ch, cw, SoR);
+      const [lx, ly] = cam(x, 0.22 + ch + 0.02, z + cw / 2 - 0.15);
+      parent.appendChild(createText(lx, ly + 10, labels[r * cols + c], 'sketch-text'));
+    }
+    const [zlx, zly] = cam(anchor.x, 0, anchor.z + totalD / 2 + 1.4);
+    parent.appendChild(createText(zlx, zly + 25, 'SYSTEMS OF RECORD', 'sketch-zone'));
+  }
+
+  function drawSoC(parent, rc, cam, anchor, costHeight) {
+    isoCube(parent, rc, cam, anchor.x, 0, anchor.z, 6.5, 0.18, 5.5, SoC_PLINTH);
+    const pipePoints = [
+      cam(anchor.x - 2.8, 0.25, anchor.z - 2.8),
+      cam(anchor.x + 2.8, 0.25, anchor.z - 2.8),
+      cam(anchor.x + 2.8, 0.25, anchor.z + 2.8),
+      cam(anchor.x - 2.8, 0.25, anchor.z + 2.8),
+    ];
+    parent.appendChild(rc.polygon(pipePoints, { stroke: '#8a8270', strokeWidth: 3, fill: 'none', roughness: 1.2 }));
+    const flowNodes = [
+      { dx: 0, dz: -2.8, c: '#f0c84a' },
+      { dx: 2.8, dz: -1.0, c: '#6BB07C' },
+      { dx: 0, dz: 2.8, c: '#7AA0E0' },
+      { dx: -2.8, dz: 1.0, c: '#D8635A' },
+      { dx: -2.8, dz: -1.4, c: '#7AA0E0' },
+      { dx: 1.4, dz: 2.8, c: '#f0c84a' },
+    ];
+    for (let fn of flowNodes) {
+      const [fx, fy] = cam(anchor.x + fn.dx, 0.25, anchor.z + fn.dz);
+      parent.appendChild(rc.circle(fx, fy, 8, { fill: fn.c, stroke: '#1f1d18', strokeWidth: 1.5, fillStyle: 'solid', roughness: 1 }));
+    }
+    const tiles = [
+      { color: '#1B6BB5', letter: 'O', dx: -1.6, dz: -1.6 },
+      { color: '#21A366', letter: 'X', dx:  1.6, dz: -1.6 },
+      { color: '#6264A7', letter: 'T', dx: -1.6, dz:  1.6 },
+      { color: '#038387', letter: 'S', dx:  1.6, dz:  1.6 },
+    ];
+    const drawTile = (n) => {
+      const tx = anchor.x + n.dx;
+      const tz = anchor.z + n.dz;
+      isoCube(parent, rc, cam, tx, 0.18, tz, 1.4, 0.4, 1.4, SoC_TILE);
+      const [px, py] = cam(tx, 0.58, tz);
+      const sp = 20;
+      parent.appendChild(rc.rectangle(px - sp/2, py - sp/2, sp, sp, { fill: n.color, stroke: '#1f1d18', strokeWidth: 1.5, fillStyle: 'solid', roughness: 1.5 }));
+      parent.appendChild(createText(px, py + sp * 0.25, n.letter, 'sketch-text white'));
+    };
+    drawTile(tiles[0]);
+    drawTile(tiles[1]);
+    if (costHeight > 0) drawCostBlock(parent, rc, cam, { x: anchor.x, y: 0.18, z: anchor.z }, costHeight);
+    drawTile(tiles[2]);
+    drawTile(tiles[3]);
+    const [zlx, zly] = cam(anchor.x, 0, anchor.z + 4.0);
+    parent.appendChild(createText(zlx, zly + 25, 'SYSTEMS OF COORDINATION', 'sketch-zone'));
+  }
+
+  function drawCostBlock(parent, rc, cam, anchor, height) {
+    if (height <= 0.01) return;
+    const w = 0.7, d = 0.7;
+    isoCube(parent, rc, cam, anchor.x, anchor.y, anchor.z, w, height, d, COST);
+    for (let h = 0.4; h < height; h += 0.8) {
+      const a = cam(anchor.x - w/2 + 0.01, anchor.y + h, anchor.z + d/2);
+      const b = cam(anchor.x + w/2 - 0.01, anchor.y + h, anchor.z + d/2);
+      parent.appendChild(rc.line(a[0], a[1], b[0], b[1], { stroke: '#ffffff', strokeWidth: 2, roughness: 2 }));
+    }
+    const [tx, ty] = cam(anchor.x, anchor.y + height + 0.10, anchor.z);
+    parent.appendChild(createText(tx, ty + 10, '$', 'sketch-cost'));
+  }
+
+  function drawAtom(parent, rc, cam, x, y, z, kind, palette) {
+    const [px, py] = cam(x, y, z);
+    const s = 6.5, strokeWidth = 1.5, stroke = '#1f1d18';
+    if (kind === 'env') {
+      parent.appendChild(rc.rectangle(px - s, py - s*0.5, s*2, s*1.1, { fill: palette.top, stroke, strokeWidth, fillStyle: 'solid', roughness: 1.5 }));
+      parent.appendChild(rc.line(px - s, py - s*0.5, px, py + s*0.2, { stroke, strokeWidth, roughness: 1.5 }));
+      parent.appendChild(rc.line(px, py + s*0.2, px + s, py - s*0.5, { stroke, strokeWidth, roughness: 1.5 }));
+    } else if (kind === 'chat') {
+      parent.appendChild(rc.rectangle(px - s, py - s*0.5, s*2, s*1.1, { fill: palette.top, stroke, strokeWidth, fillStyle: 'solid', roughness: 1.5 }));
+    } else if (kind === 'doc') {
+      parent.appendChild(rc.rectangle(px - s*0.55, py - s, s*1.1, s*1.5, { fill: palette.top, stroke, strokeWidth, fillStyle: 'solid', roughness: 1.5 }));
+    } else if (kind === 'at' || kind === 'call') {
+      parent.appendChild(rc.circle(px, py, s*1.4, { fill: palette.top, stroke, strokeWidth, fillStyle: 'solid', roughness: 1.5 }));
+    } else if (kind === 'cal') {
+      parent.appendChild(rc.rectangle(px - s, py - s, s*2, s*1.4, { fill: palette.top, stroke, strokeWidth, fillStyle: 'solid', roughness: 1.5 }));
+    }
+  }
+
+  function drawCoordAtoms(parent, rc, cam, center, count, seed = 7) {
+    const rng = mulberry32(seed);
+    const kinds = ['env', 'chat', 'doc', 'cal', 'at', 'call'];
+    for (let i = 0; i < count; i++) {
+      const x = center.x + (rng() - 0.5) * 6.5;
+      const y = 1.5 + rng() * 3.2;
+      const z = center.z + (rng() - 0.5) * 6.5;
+      const fp = FRAG[Math.floor(rng() * 4)];
+      drawAtom(parent, rc, cam, x, y, z, kinds[Math.floor(rng() * kinds.length)], fp);
+    }
+  }
+
+  function drawDebris(parent, rc, cam, center, count, spread = 2.4, seed = 13, yOffset = 0) {
+    const rng = mulberry32(seed);
+    const heap = [];
+    for (let i = 0; i < count; i++) {
+      const r = rng() * spread;
+      const ang = rng() * Math.PI * 2;
+      const x = center.x + Math.cos(ang) * r;
+      const z = center.z + Math.sin(ang) * r;
+      const y = (i % 7) * 0.04 + yOffset;
+      const paletteBase = FRAG[Math.floor(rng() * 4)];
+      const palette = { top: paletteBase.top, right: paletteBase.right, front: paletteBase.front, stroke: '#1f1d18', style: 'solid' };
+      heap.push({ x, y, z, palette, rotate: (rng() - 0.5) * 60 });
+    }
+    heap.sort((a, b) => (a.x + a.z) - (b.x + b.z));
+    for (const f of heap) {
+      const w = 0.30 + rng() * 0.30;
+      const d = 0.24 + rng() * 0.28;
+      const h = 0.04 + rng() * 0.04;
+      isoCube(parent, rc, cam, f.x, f.y, f.z, w, h, d, f.palette, f.rotate);
+    }
+  }
+
+  function drawTrickle(parent, rc, cam, socCenter, sorCenter, count, seed = 99) {
+    const rng = mulberry32(seed);
+    for (let i = 0; i < count; i++) {
+      const t = 0.2 + rng() * 0.7;
+      const x = socCenter.x + (sorCenter.x - socCenter.x) * t;
+      const z = socCenter.z + (sorCenter.z - socCenter.z) * t;
+      const y = 1.4 + Math.sin(rng() * Math.PI) * 0.6;
+      const fp = FRAG[Math.floor(rng() * 4)];
+      drawAtom(parent, rc, cam, x, y, z, 'env', fp);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PARADIGM 1 — OBSERVATORY TOWER
+  // ──────────────────────────────────────────────────────
+  // Tower placement — front of the iso scene, off to the front-left
+  // so it doesn't overlap the debris pile (which is at GAP_CTR).
+  const TOWER_ANCHOR = { x: -3.5, y: 0, z: 4.0 };
+  const TOWER_W = 2.6, TOWER_D = 1.6;
+  // Three vertical bands stacked
+  const BAND_H = 1.6;
+  const BAND_DEFS = [
+    { palette: UNI_DEEP, label: 'WORKFLOW' },
+    { palette: UNI_MID,  label: 'PRODUCT' },
+    { palette: UNI,      label: 'OUTCOMES + AI' },
+  ];
+
+  function drawObservatoryTower(parent, rc, cam, opts = {}) {
+    const builtBands = opts.builtBands ?? 0; // 0..3
+    for (let b = 0; b < builtBands; b++) {
+      const band = BAND_DEFS[b];
+      const y0 = b * BAND_H;
+      isoCube(parent, rc, cam, TOWER_ANCHOR.x, y0, TOWER_ANCHOR.z, TOWER_W, BAND_H, TOWER_D, band.palette);
+      // band label on the +x side (visible side facing viewer)
+      const [lx, ly] = cam(TOWER_ANCHOR.x + TOWER_W / 2 + 0.04, y0 + BAND_H / 2, TOWER_ANCHOR.z);
+      const t = createText(lx + 18, ly + 4, band.label, 'sketch-tower-band');
+      t.setAttribute('text-anchor', 'start');
+      parent.appendChild(t);
+    }
+
+    // Audit-card facade on the +z face (the face that points roughly toward
+    // the camera) — a 4×3 grid of cream cards. Cards are drawn as flat iso
+    // polygons attached to the front face plane (z = anchor.z + d/2 + a tiny offset).
+    const cardCount = opts.cardCount ?? 0;
+    if (cardCount <= 0 || builtBands < 1) return;
+    const facadeZ = TOWER_ANCHOR.z + TOWER_D / 2 + 0.02;
+    const facadeW = TOWER_W * 0.86;
+    const facadeH = builtBands * BAND_H * 0.86;
+    const cardCols = 4, cardRows = 3;
+    const cardW = facadeW / cardCols * 0.84;
+    const cardH = facadeH / cardRows * 0.84;
+    const cardGapX = (facadeW - cardCols * cardW) / (cardCols + 1);
+    const cardGapY = (facadeH - cardRows * cardH) / (cardRows + 1);
+    const startX = TOWER_ANCHOR.x - facadeW / 2 + cardGapX + cardW / 2;
+    const startY = 0.10 + cardGapY + cardH / 2;
+    const maxCards = cardCols * cardRows;
+    for (let i = 0; i < Math.min(cardCount, maxCards); i++) {
+      const col = i % cardCols;
+      const row = Math.floor(i / cardCols);
+      const cx = startX + col * (cardW + cardGapX);
+      const cy = startY + row * (cardH + cardGapY);
+      // four corners of the card on the +z face (z fixed)
+      const p1 = cam(cx - cardW / 2, cy - cardH / 2, facadeZ);
+      const p2 = cam(cx + cardW / 2, cy - cardH / 2, facadeZ);
+      const p3 = cam(cx + cardW / 2, cy + cardH / 2, facadeZ);
+      const p4 = cam(cx - cardW / 2, cy + cardH / 2, facadeZ);
+      parent.appendChild(rc.polygon([p1, p2, p3, p4], { fill: CREAM.top, stroke: '#1f1d18', strokeWidth: 1.2, fillStyle: 'solid', roughness: 1.0 }));
+      // small color dot (color-as-meaning) — at the left edge
+      const dotPos = cam(cx - cardW / 2 + 0.08, cy, facadeZ);
+      const fp = FRAG[i % 4];
+      parent.appendChild(rc.circle(dotPos[0], dotPos[1], 4, { fill: fp.top, stroke: '#1f1d18', strokeWidth: 1, fillStyle: 'solid', roughness: 0.8 }));
+      // two small "row" hatch lines representing text
+      const ln1A = cam(cx - cardW / 2 + 0.18, cy - cardH * 0.18, facadeZ);
+      const ln1B = cam(cx + cardW / 2 - 0.08, cy - cardH * 0.18, facadeZ);
+      parent.appendChild(rc.line(ln1A[0], ln1A[1], ln1B[0], ln1B[1], { stroke: '#1f1d18', strokeWidth: 1, roughness: 0.8 }));
+      const ln2A = cam(cx - cardW / 2 + 0.18, cy + cardH * 0.18, facadeZ);
+      const ln2B = cam(cx + cardW / 2 - 0.22, cy + cardH * 0.18, facadeZ);
+      parent.appendChild(rc.line(ln2A[0], ln2A[1], ln2B[0], ln2B[1], { stroke: '#1f1d18', strokeWidth: 1, roughness: 0.8 }));
+    }
+  }
+
+  function drawObservatoryFilaments(parent, rc, cam, sorAnchor, socAnchor) {
+    // Capture filaments arc across the floor from SoR + SoC to the tower base
+    const baseY = 0.10;
+    const towerBase = [TOWER_ANCHOR.x, baseY, TOWER_ANCHOR.z];
+    const drawArc = (from, color) => {
+      const a = cam(from[0], from[1], from[2]);
+      const b = cam(towerBase[0], towerBase[1], towerBase[2]);
+      const mid = [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) - 36];
+      parent.appendChild(rc.curve([[a[0], a[1]], [mid[0], mid[1]], [b[0], b[1]]], {
+        stroke: color, strokeWidth: 1.8, fill: 'none',
+        strokeLineDash: [6, 5], roughness: 1.4,
+      }));
+    };
+    // 4 from SoR corners
+    drawArc([sorAnchor.x - 1.7, 0.4, sorAnchor.z - 1.7], '#25497d');
+    drawArc([sorAnchor.x + 1.7, 0.4, sorAnchor.z - 1.7], '#25497d');
+    drawArc([sorAnchor.x - 1.7, 0.4, sorAnchor.z + 1.7], '#25497d');
+    drawArc([sorAnchor.x + 1.7, 0.4, sorAnchor.z + 1.7], '#25497d');
+    // 4 from SoC corners
+    drawArc([socAnchor.x - 2.8, 0.4, socAnchor.z - 2.8], '#7a3a8e');
+    drawArc([socAnchor.x + 2.8, 0.4, socAnchor.z - 2.8], '#7a3a8e');
+    drawArc([socAnchor.x - 2.8, 0.4, socAnchor.z + 2.8], '#7a3a8e');
+    drawArc([socAnchor.x + 2.8, 0.4, socAnchor.z + 2.8], '#7a3a8e');
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PARADIGM 2 — CUTAWAY EXCAVATION
+  // ──────────────────────────────────────────────────────
+  // The cut occupies the front-center floor area
+  // CUT pulled forward (positive z) so it sits clearly in the front of the
+  // scene, away from SoC (which is at z<0). Smaller and centred on the
+  // iso "front-and-slightly-left" of where SoC sits.
+  const CUT = { xMin: -2.0, xMax: 2.0, zMin: -0.5, zMax: 4.5 };
+
+  // Render fragment strata at multiple sub-surface y levels inside the cut.
+  // Each band is denser than the existing surface debris because it
+  // represents "years of buried work."
+  function drawStrata(parent, rc, cam, layerCount, opts = {}) {
+    if (layerCount <= 0) return;
+    // Reduced fragment counts per layer so the cut has visual breathing room
+    // and the box / collection lines stay readable on top.
+    const layers = [
+      { y: -0.45, count: 9,  seed: 5101 },
+      { y: -1.00, count: 11, seed: 5102 },
+      { y: -1.55, count: 14, seed: 5103 },
+      { y: -2.15, count: 16, seed: 5104 },
+    ];
+    for (let li = 0; li < Math.min(layerCount, layers.length); li++) {
+      const layer = layers[li];
+      const rng = mulberry32(layer.seed);
+      const items = [];
+      for (let i = 0; i < layer.count; i++) {
+        const x = CUT.xMin + 0.4 + rng() * (CUT.xMax - CUT.xMin - 0.8);
+        const z = CUT.zMin + 0.4 + rng() * (CUT.zMax - CUT.zMin - 0.8);
+        const paletteBase = FRAG[Math.floor(rng() * 4)];
+        items.push({
+          x, z, y: layer.y + (rng() - 0.5) * 0.18,
+          palette: { top: paletteBase.top, right: paletteBase.right, front: paletteBase.front, stroke: '#1f1d18', style: 'solid' },
+          rotate: (rng() - 0.5) * 60,
+          w: 0.30 + rng() * 0.30,
+          d: 0.24 + rng() * 0.28,
+          h: 0.10 + rng() * 0.06,
+        });
+      }
+      items.sort((a, b) => (a.x + a.z) - (b.x + b.z));
+      for (const it of items) {
+        isoCube(parent, rc, cam, it.x, it.y, it.z, it.w, it.h, it.d, it.palette, it.rotate);
+      }
+    }
+  }
+
+  // The vertical cross-section walls of the cut — the four iso faces
+  // showing the "earth" of the dug-out area. They sit at y in [yMin, 0].
+  function drawCutWalls(parent, rc, cam) {
+    const yMin = -2.4, yTop = 0;
+    const earth = { top: '#cbbb98', right: '#9e8a64', front: '#bca887', stroke: '#3a2e1c' };
+    // Front wall (z = CUT.zMax)
+    {
+      const p1 = cam(CUT.xMin, yMin, CUT.zMax);
+      const p2 = cam(CUT.xMax, yMin, CUT.zMax);
+      const p3 = cam(CUT.xMax, yTop, CUT.zMax);
+      const p4 = cam(CUT.xMin, yTop, CUT.zMax);
+      parent.appendChild(rc.polygon([p1, p2, p3, p4], { fill: earth.front, stroke: earth.stroke, strokeWidth: 1.2, fillStyle: 'hachure', hachureAngle: -60, hachureGap: 4, roughness: 1.6 }));
+    }
+    // Right wall (x = CUT.xMax)
+    {
+      const p1 = cam(CUT.xMax, yMin, CUT.zMin);
+      const p2 = cam(CUT.xMax, yMin, CUT.zMax);
+      const p3 = cam(CUT.xMax, yTop, CUT.zMax);
+      const p4 = cam(CUT.xMax, yTop, CUT.zMin);
+      parent.appendChild(rc.polygon([p1, p2, p3, p4], { fill: earth.right, stroke: earth.stroke, strokeWidth: 1.2, fillStyle: 'hachure', hachureAngle: 0, hachureGap: 4, roughness: 1.6 }));
+    }
+    // Back wall (z = CUT.zMin) — partially hidden but visible at edges
+    {
+      const p1 = cam(CUT.xMin, yMin, CUT.zMin);
+      const p2 = cam(CUT.xMax, yMin, CUT.zMin);
+      const p3 = cam(CUT.xMax, yTop, CUT.zMin);
+      const p4 = cam(CUT.xMin, yTop, CUT.zMin);
+      parent.appendChild(rc.polygon([p1, p2, p3, p4], { fill: earth.top, stroke: earth.stroke, strokeWidth: 1.2, fillStyle: 'hachure', hachureAngle: 60, hachureGap: 4, roughness: 1.6 }));
+    }
+    // Left wall (x = CUT.xMin) — partially hidden
+    {
+      const p1 = cam(CUT.xMin, yMin, CUT.zMin);
+      const p2 = cam(CUT.xMin, yMin, CUT.zMax);
+      const p3 = cam(CUT.xMin, yTop, CUT.zMax);
+      const p4 = cam(CUT.xMin, yTop, CUT.zMin);
+      parent.appendChild(rc.polygon([p1, p2, p3, p4], { fill: earth.top, stroke: earth.stroke, strokeWidth: 1.2, fillStyle: 'hachure', hachureAngle: 60, hachureGap: 4, roughness: 1.6 }));
+    }
+    // Rim at y=0 — the edges of the hole on the floor
+    const rim = [
+      cam(CUT.xMin, 0, CUT.zMin),
+      cam(CUT.xMax, 0, CUT.zMin),
+      cam(CUT.xMax, 0, CUT.zMax),
+      cam(CUT.xMin, 0, CUT.zMax),
+    ];
+    parent.appendChild(rc.polygon(rim, { stroke: '#1f1d18', strokeWidth: 2, fill: 'none', roughness: 1.5 }));
+  }
+
+  // ──────────────────────────────────────────────────────
+  // AI MECHANISM (Excavation paradigm)
+  // ──────────────────────────────────────────────────────
+  // The AI engine — a glowing blue cube sitting just above the cut centre.
+  // The engine is the "Outcomes + AI" head of Unifize (per v3.tsx band).
+  const AI_ENGINE = { x: (CUT.xMin + CUT.xMax) / 2, y: 0.45, z: (CUT.zMin + CUT.zMax) / 2 };
+
+  // Fixed positions of buried "blocked" fragments — coordinates where the
+  // AI will route dynamic nodes to clear them. Ordered so the first four
+  // are cleared in panel 5, the rest in panel 6.
+  const BLOCKED_FRAGMENTS = [
+    { x: 0.2,  y: -0.55, z: -1.5, idx: 0 },
+    { x: 2.6,  y: -0.50, z:  0.3, idx: 1 },
+    { x: -0.4, y: -1.05, z:  1.4, idx: 2 },
+    { x: 2.9,  y: -1.05, z:  2.6, idx: 3 },
+    { x: 1.1,  y: -1.55, z: -2.2, idx: 4 },
+    { x: 0.4,  y: -1.55, z:  2.8, idx: 5 },
+    { x: 3.2,  y: -2.00, z: -1.0, idx: 6 },
+    { x: -0.7, y: -1.95, z:  0.2, idx: 7 },
+    { x: 2.2,  y: -2.10, z:  1.6, idx: 8 },
+    { x: 1.8,  y: -2.20, z:  3.5, idx: 9 },
+  ];
+
+  // Dynamic nodes the AI spawns. Each node has a parent (the AI engine or
+  // another already-spawned node) and a target blocked-fragment it clears.
+  const DYNAMIC_NODES = [
+    // Wave 1 — spawned in panel 5 (4 nodes, each from the AI engine)
+    { x:  0.7, y: -0.30, z: -1.2, parent: 'engine', target: 0, wave: 1 },
+    { x:  2.1, y: -0.25, z:  0.0, parent: 'engine', target: 1, wave: 1 },
+    { x: -0.1, y: -0.85, z:  1.2, parent: 'engine', target: 2, wave: 1 },
+    { x:  2.5, y: -0.85, z:  2.4, parent: 'engine', target: 3, wave: 1 },
+    // Wave 2 — spawned in panel 6 (6 more, branching off wave 1)
+    { x:  1.4, y: -1.20, z: -1.8, parent: 0, target: 4, wave: 2 },
+    { x:  0.6, y: -1.25, z:  2.4, parent: 2, target: 5, wave: 2 },
+    { x:  2.8, y: -1.65, z: -0.6, parent: 1, target: 6, wave: 2 },
+    { x: -0.3, y: -1.65, z:  0.4, parent: 2, target: 7, wave: 2 },
+    { x:  2.0, y: -1.75, z:  1.5, parent: 3, target: 8, wave: 2 },
+    { x:  1.5, y: -1.95, z:  3.0, parent: 3, target: 9, wave: 2 },
+  ];
+
+  // Draw a small red dashed ring around a buried fragment to mark it as
+  // "blocked" (work the gap has trapped). Used for fragments that the AI
+  // has not yet cleared.
+  function drawBlockedRing(parent, rc, cam, pos) {
+    const [px, py] = cam(pos.x, pos.y + 0.10, pos.z);
+    parent.appendChild(rc.circle(px, py, 16, {
+      stroke: '#b3392a', strokeWidth: 1.8, fill: 'none',
+      strokeLineDash: [4, 3], roughness: 1.4,
+    }));
+  }
+
+  // Draw the AI engine — a blue cube floating at the cut's surface centre,
+  // wrapped in two concentric halo rings. Reads as "live AI."
+  function drawAIEngine(parent, rc, cam, glow = true) {
+    isoCube(parent, rc, cam, AI_ENGINE.x, AI_ENGINE.y, AI_ENGINE.z, 0.85, 0.55, 0.85, UNI);
+    // Caps the cube with a brighter top sliver so it reads as "active"
+    isoCube(parent, rc, cam, AI_ENGINE.x, AI_ENGINE.y + 0.55, AI_ENGINE.z, 0.65, 0.08, 0.65,
+      { top: '#a3c2f0', right: '#5c8bd6', front: '#7da7df', stroke: '#1f1d18', style: 'solid' });
+    if (glow) {
+      const [hx, hy] = cam(AI_ENGINE.x, AI_ENGINE.y + 0.30, AI_ENGINE.z);
+      parent.appendChild(rc.circle(hx, hy, 80, { stroke: 'rgba(37,73,125,0.45)', strokeWidth: 1.5, fill: 'none', roughness: 1.4 }));
+      parent.appendChild(rc.circle(hx, hy, 54, { stroke: 'rgba(37,73,125,0.65)', strokeWidth: 1.2, fill: 'none', roughness: 1.2 }));
+      // small "AI" label just above the engine
+      const lbl = createText(hx, hy - 50, 'AI', 'sketch-cost');
+      lbl.setAttribute('fill', '#25497d');
+      parent.appendChild(lbl);
+    }
+  }
+
+  // Draw a single dynamic node (smaller than the AI engine) at the given pos.
+  // If isNew, surround with a small glow halo to indicate it was just spawned.
+  function drawDynamicNode(parent, rc, cam, pos, isNew = false) {
+    isoCube(parent, rc, cam, pos.x, pos.y, pos.z, 0.40, 0.32, 0.40, UNI_MID);
+    if (isNew) {
+      const [px, py] = cam(pos.x, pos.y + 0.16, pos.z);
+      parent.appendChild(rc.circle(px, py, 22, { stroke: 'rgba(92,139,214,0.85)', strokeWidth: 1.2, fill: 'none', roughness: 1.2 }));
+    }
+  }
+
+  // Spawn line — solid blue line from parent node (or AI engine) to a new node.
+  function drawSpawnLine(parent, rc, cam, from, to) {
+    const a = cam(from.x, from.y, from.z);
+    const b = cam(to.x, to.y, to.z);
+    parent.appendChild(rc.line(a[0], a[1], b[0], b[1], { stroke: '#25497d', strokeWidth: 1.4, roughness: 1.2 }));
+  }
+
+  // Routing line — dashed cyan line from a dynamic node to its target buried
+  // fragment. This is the AI's "reach" — what it's processing.
+  function drawRoutingLine(parent, rc, cam, from, to) {
+    const a = cam(from.x, from.y, from.z);
+    const b = cam(to.x, to.y, to.z);
+    parent.appendChild(rc.line(a[0], a[1], b[0], b[1], {
+      stroke: '#5c8bd6', strokeWidth: 1.0, strokeLineDash: [3, 3], roughness: 1.0,
+    }));
+  }
+
+  // The dynamic AI network — replaces the uniform lattice.
+  // nodesActive controls how many dynamic nodes are visible (in order).
+  // Returns the indices of cleared targets so the caller can decide
+  // which red blockage rings to skip drawing.
+  function drawDynamicNetwork(parent, rc, cam, nodesActive) {
+    if (nodesActive <= 0) return new Set();
+    const cleared = new Set();
+    // Spawn lines first (behind nodes)
+    for (let i = 0; i < Math.min(nodesActive, DYNAMIC_NODES.length); i++) {
+      const n = DYNAMIC_NODES[i];
+      const parentNode = n.parent === 'engine' ? AI_ENGINE : DYNAMIC_NODES[n.parent];
+      drawSpawnLine(parent, rc, cam, parentNode, n);
+    }
+    // Routing lines (node → target blocked fragment)
+    for (let i = 0; i < Math.min(nodesActive, DYNAMIC_NODES.length); i++) {
+      const n = DYNAMIC_NODES[i];
+      const target = BLOCKED_FRAGMENTS[n.target];
+      if (target) {
+        drawRoutingLine(parent, rc, cam, n, target);
+        cleared.add(n.target);
+      }
+    }
+    // Nodes themselves on top
+    for (let i = 0; i < Math.min(nodesActive, DYNAMIC_NODES.length); i++) {
+      const isNew = (i === nodesActive - 1) || (i === nodesActive - 2);
+      drawDynamicNode(parent, rc, cam, DYNAMIC_NODES[i], isNew);
+    }
+    return cleared;
+  }
+
+  // Draw the blocked-fragment ring overlays — large red dashed rings
+  // around the BLOCKED_FRAGMENTS positions. Skips any in `cleared`.
+  function drawBlockedRings(parent, rc, cam, cleared = new Set()) {
+    for (const bf of BLOCKED_FRAGMENTS) {
+      if (cleared.has(bf.idx)) continue;
+      drawBlockedRing(parent, rc, cam, bf);
+    }
+  }
+
+  // Draw a buried fragment cube at a blocked position so it actually exists
+  // visually for the ring to wrap around (separate from the random strata).
+  function drawBlockedFragmentCubes(parent, rc, cam) {
+    for (const bf of BLOCKED_FRAGMENTS) {
+      const palette = { top: '#9e7a6a', right: '#4a2b1e', front: '#6e4a36', stroke: '#1f1d18', style: 'solid' };
+      isoCube(parent, rc, cam, bf.x, bf.y, bf.z, 0.42, 0.16, 0.36, palette, (bf.idx * 17) % 50 - 25);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // UNIFIZE BOX + CONVEYOR (Paradigm 2 — "Unifize-as-a-layer")
+  // The box sits over the cut and collects buried records.
+  // A conveyor belt extends out of the box's front face, carrying
+  // clean audit-trail records outward toward the viewer.
+  // ──────────────────────────────────────────────────────
+  // Box sits centred inside the (smaller) cut, clear of both SoR and SoC.
+  // Conveyor extends out the box's +z (front) face toward the viewer.
+  const UNI_BOX  = { xMin: -1.5, xMax: 1.5, yMin: 0.0,  yMax: 1.4,  zMin: 0.0, zMax: 4.0 };
+  const UNI_CONV = { xMin: -0.7, xMax: 0.7, yBase: 0.18, yTop: 0.42, zMin: 4.0, zMax: 7.4 };
+
+  function drawUnifizeBox(parent, rc, cam) {
+    const w = UNI_BOX.xMax - UNI_BOX.xMin;
+    const h = UNI_BOX.yMax - UNI_BOX.yMin;
+    const d = UNI_BOX.zMax - UNI_BOX.zMin;
+    const cx = (UNI_BOX.xMin + UNI_BOX.xMax) / 2;
+    const cz = (UNI_BOX.zMin + UNI_BOX.zMax) / 2;
+
+    // Main blue box
+    isoCube(parent, rc, cam, cx, UNI_BOX.yMin, cz, w, h, d, UNI);
+
+    // Top opening — recessed darker rect with cross-hatch fill, suggests "container"
+    const inset = 0.4;
+    const opening = [
+      cam(UNI_BOX.xMin + inset, UNI_BOX.yMax + 0.001, UNI_BOX.zMin + inset),
+      cam(UNI_BOX.xMax - inset, UNI_BOX.yMax + 0.001, UNI_BOX.zMin + inset),
+      cam(UNI_BOX.xMax - inset, UNI_BOX.yMax + 0.001, UNI_BOX.zMax - inset),
+      cam(UNI_BOX.xMin + inset, UNI_BOX.yMax + 0.001, UNI_BOX.zMax - inset),
+    ];
+    parent.appendChild(rc.polygon(opening, {
+      fill: UNI_DEEP.top, stroke: '#1f1d18', strokeWidth: 1.5,
+      fillStyle: 'cross-hatch', hachureGap: 6, roughness: 1.2,
+    }));
+
+    // Subtle glow halo above the opening (suggests "AI active inside")
+    const [hx, hy] = cam(cx, UNI_BOX.yMax + 0.4, cz);
+    parent.appendChild(rc.circle(hx, hy, 90, {
+      stroke: 'rgba(37,73,125,0.35)', strokeWidth: 1.2, fill: 'none', roughness: 1.4,
+    }));
+    parent.appendChild(rc.circle(hx, hy, 56, {
+      stroke: 'rgba(92,139,214,0.55)', strokeWidth: 1.0, fill: 'none', roughness: 1.2,
+    }));
+
+    // "UNIFIZE" label on the front face of the box
+    const [lx, ly] = cam(cx, UNI_BOX.yMin + h * 0.5, UNI_BOX.zMax + 0.01);
+    const lbl = createText(lx, ly + 5, 'UNIFIZE', 'sketch-text');
+    lbl.setAttribute('fill', '#ffffff');
+    parent.appendChild(lbl);
+  }
+
+  // Curved dashed lines from buried strata fragments up to the box's top
+  // opening — the "collection" act.
+  function drawCollectionLines(parent, rc, cam, count) {
+    if (count <= 0) return;
+    const rng = mulberry32(5500);
+    for (let i = 0; i < count; i++) {
+      const sx = CUT.xMin + 0.4 + rng() * (CUT.xMax - CUT.xMin - 0.8);
+      const sz = CUT.zMin + 0.4 + rng() * (CUT.zMax - CUT.zMin - 0.8);
+      const sy = -0.4 - rng() * 1.7;
+      const ex = UNI_BOX.xMin + 0.5 + rng() * (UNI_BOX.xMax - UNI_BOX.xMin - 1.0);
+      const ez = UNI_BOX.zMin + 0.5 + rng() * (UNI_BOX.zMax - UNI_BOX.zMin - 1.0);
+      const ey = UNI_BOX.yMax + 0.2;
+      const a = cam(sx, sy, sz);
+      const b = cam(ex, ey, ez);
+      const mid = [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) - 40];
+      parent.appendChild(rc.curve([[a[0], a[1]], [mid[0], mid[1]], [b[0], b[1]]], {
+        stroke: '#5c8bd6', strokeWidth: 1.1, strokeLineDash: [3, 3], fill: 'none', roughness: 1.4,
+      }));
+    }
+  }
+
+  // Coloured fragments mid-flight from below the cut up into the box.
+  function drawRisingFragments(parent, rc, cam, count) {
+    if (count <= 0) return;
+    const rng = mulberry32(5610);
+    for (let i = 0; i < count; i++) {
+      const sx = CUT.xMin + 0.5 + rng() * (CUT.xMax - CUT.xMin - 1.0);
+      const sz = CUT.zMin + 0.5 + rng() * (CUT.zMax - CUT.zMin - 1.0);
+      const sy = -0.4 + rng() * (UNI_BOX.yMax + 0.7);
+      const fp = FRAG[Math.floor(rng() * 4)];
+      const palette = { top: fp.top, right: fp.right, front: fp.front, stroke: '#1f1d18', style: 'solid' };
+      isoCube(parent, rc, cam, sx, sy, sz, 0.32, 0.10, 0.26, palette, (rng() - 0.5) * 60);
+    }
+  }
+
+  // The conveyor belt — a dark slab extending out the front face of the box.
+  // extension = 0..1 controls how far it's currently extended.
+  function drawConveyor(parent, rc, cam, extension) {
+    if (extension <= 0.01) return;
+    const startZ = UNI_CONV.zMin;
+    const endZ = startZ + (UNI_CONV.zMax - UNI_CONV.zMin) * extension;
+    const w = UNI_CONV.xMax - UNI_CONV.xMin;
+    const cx = (UNI_CONV.xMin + UNI_CONV.xMax) / 2;
+    const len = endZ - startZ;
+    // Belt slab
+    isoCube(parent, rc, cam, cx, UNI_CONV.yBase, (startZ + endZ) / 2, w, UNI_CONV.yTop - UNI_CONV.yBase, len, {
+      top: '#3a3a44', right: '#1a1a22', front: '#28282f', stroke: '#1f1d18', style: 'solid',
+    });
+    // Belt segment lines (slats running across the belt at intervals)
+    const segCount = Math.floor(len / 0.5);
+    for (let i = 1; i <= segCount; i++) {
+      const sz = startZ + i * 0.5;
+      if (sz > endZ - 0.02) break;
+      const a = cam(UNI_CONV.xMin + 0.02, UNI_CONV.yTop + 0.002, sz);
+      const b = cam(UNI_CONV.xMax - 0.02, UNI_CONV.yTop + 0.002, sz);
+      parent.appendChild(rc.line(a[0], a[1], b[0], b[1], { stroke: '#1f1d18', strokeWidth: 0.9, roughness: 1.0 }));
+    }
+    // Optional drum at the far end of the belt
+    if (extension >= 0.95) {
+      isoCube(parent, rc, cam, cx, UNI_CONV.yBase, endZ + 0.18, w, UNI_CONV.yTop - UNI_CONV.yBase + 0.04, 0.30, {
+        top: '#4a4a54', right: '#1a1a22', front: '#28282f', stroke: '#1f1d18', style: 'solid',
+      });
+    }
+  }
+
+  // CONTEXT arrows — solid navy arcs from SoR record corners up to the
+  // Unifize box's top. SoR is the source of authoritative context the box
+  // needs in order to govern a record.
+  function drawContextArrows(parent, rc, cam, sorAnchor) {
+    const corners = [
+      { dx: -1.7, dz: -1.7, name: 'QMS' },
+      { dx:  1.7, dz: -1.7, name: 'DMS' },
+      { dx:  1.7, dz:  1.7, name: 'ERP' },
+      { dx: -1.7, dz:  1.7, name: 'PLM' },
+    ];
+    // Land points on the box top, spread across the +x face (the SoR-facing edge).
+    const landings = [
+      { x: UNI_BOX.xMin + 0.4, z: UNI_BOX.zMin + 0.5 },
+      { x: UNI_BOX.xMin + 0.4, z: UNI_BOX.zMin + 1.5 },
+      { x: UNI_BOX.xMin + 0.4, z: UNI_BOX.zMin + 2.5 },
+      { x: UNI_BOX.xMin + 0.4, z: UNI_BOX.zMin + 3.5 },
+    ];
+    for (let i = 0; i < corners.length; i++) {
+      const c = corners[i];
+      const from = { x: sorAnchor.x + c.dx, y: 1.55, z: sorAnchor.z + c.dz };
+      const to   = { x: landings[i].x, y: UNI_BOX.yMax + 0.05, z: landings[i].z };
+      const a = cam(from.x, from.y, from.z);
+      const b = cam(to.x, to.y, to.z);
+      const mid = [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) - 38];
+      parent.appendChild(rc.curve([[a[0], a[1]], [mid[0], mid[1]], [b[0], b[1]]], {
+        stroke: '#25497d', strokeWidth: 1.7, fill: 'none', roughness: 1.3,
+      }));
+      // Arrow head at the box end
+      const dx = b[0] - mid[0], dy = b[1] - mid[1];
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      parent.appendChild(rc.polygon([
+        [b[0], b[1]],
+        [b[0] - ux * 9 + uy * 4, b[1] - uy * 9 - ux * 4],
+        [b[0] - ux * 9 - uy * 4, b[1] - uy * 9 + ux * 4],
+      ], { fill: '#25497d', stroke: '#25497d', strokeWidth: 1, fillStyle: 'solid', roughness: 0.8 }));
+    }
+  }
+
+  // CAPTURE arrows — purple dashed arcs from each SoC tile up to the Unifize
+  // box's top. SoC is the source of coordination work (decisions, approvals,
+  // chat threads) that the box needs to capture.
+  function drawCaptureArrows(parent, rc, cam, socAnchor) {
+    const tiles = [
+      { dx: -1.6, dz: -1.6 }, // Outlook
+      { dx:  1.6, dz: -1.6 }, // Excel
+      { dx: -1.6, dz:  1.6 }, // Teams
+      { dx:  1.6, dz:  1.6 }, // SharePoint
+    ];
+    // Land points on box top, spread across the -x face (the SoC-facing edge).
+    const landings = [
+      { x: UNI_BOX.xMax - 0.4, z: UNI_BOX.zMin + 0.5 },
+      { x: UNI_BOX.xMax - 0.4, z: UNI_BOX.zMin + 1.5 },
+      { x: UNI_BOX.xMax - 0.4, z: UNI_BOX.zMin + 2.5 },
+      { x: UNI_BOX.xMax - 0.4, z: UNI_BOX.zMin + 3.5 },
+    ];
+    for (let i = 0; i < tiles.length; i++) {
+      const t = tiles[i];
+      const from = { x: socAnchor.x + t.dx, y: 0.85, z: socAnchor.z + t.dz };
+      const to   = { x: landings[i].x, y: UNI_BOX.yMax + 0.05, z: landings[i].z };
+      const a = cam(from.x, from.y, from.z);
+      const b = cam(to.x, to.y, to.z);
+      const mid = [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) - 44];
+      parent.appendChild(rc.curve([[a[0], a[1]], [mid[0], mid[1]], [b[0], b[1]]], {
+        stroke: '#7a3a8e', strokeWidth: 1.5, fill: 'none',
+        strokeLineDash: [5, 4], roughness: 1.3,
+      }));
+      const dx = b[0] - mid[0], dy = b[1] - mid[1];
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      parent.appendChild(rc.polygon([
+        [b[0], b[1]],
+        [b[0] - ux * 9 + uy * 4, b[1] - uy * 9 - ux * 4],
+        [b[0] - ux * 9 - uy * 4, b[1] - uy * 9 + ux * 4],
+      ], { fill: '#7a3a8e', stroke: '#7a3a8e', strokeWidth: 1, fillStyle: 'solid', roughness: 0.8 }));
+    }
+  }
+
+  // Small bottom-corner legend explaining the three input flows.
+  function drawRelationshipLegend(parent, rc, panelW, panelH) {
+    const entries = [
+      { color: '#25497d', label: 'CONTEXT',    sub: 'from SoR',    dash: '6 0' },
+      { color: '#7a3a8e', label: 'CAPTURE',    sub: 'from SoC',    dash: '5 4' },
+      { color: '#5c8bd6', label: 'COLLECTION', sub: 'from strata', dash: '3 3' },
+    ];
+    const x0 = panelW - 200;
+    const y0 = panelH - 80;
+    // Background card
+    parent.appendChild(rc.rectangle(x0 - 12, y0 - 18, 198, 76, {
+      fill: 'rgba(244,237,224,0.92)', stroke: '#8a8270', strokeWidth: 1.0,
+      fillStyle: 'solid', roughness: 1.0,
+    }));
+    entries.forEach((e, i) => {
+      const yy = y0 + i * 18;
+      parent.appendChild(rc.line(x0, yy, x0 + 24, yy, {
+        stroke: e.color, strokeWidth: 1.8, strokeLineDash: e.dash, roughness: 0.6,
+      }));
+      parent.appendChild(rc.polygon([
+        [x0 + 24, yy],
+        [x0 + 20, yy - 3],
+        [x0 + 20, yy + 3],
+      ], { fill: e.color, stroke: e.color, strokeWidth: 0.8, fillStyle: 'solid', roughness: 0.6 }));
+      const t = createText(x0 + 32, yy + 4, e.label, 'sketch-text');
+      t.setAttribute('text-anchor', 'start');
+      t.setAttribute('fill', e.color);
+      t.setAttribute('font-size', '11');
+      parent.appendChild(t);
+      const s = createText(x0 + 102, yy + 4, e.sub, 'sketch-strata');
+      s.setAttribute('text-anchor', 'start');
+      s.setAttribute('font-size', '11');
+      parent.appendChild(s);
+    });
+  }
+
+  // Clean audit-trail records sitting on the conveyor (narrower now).
+  function drawCleanRecords(parent, rc, cam, count) {
+    if (count <= 0) return;
+    const titles = ['CR-241', 'CR-238', 'NCR-419', 'ECO-77'];
+    const cx = (UNI_CONV.xMin + UNI_CONV.xMax) / 2;
+    const recordW = (UNI_CONV.xMax - UNI_CONV.xMin) * 0.86;
+    const recordD = 0.7;
+    const startZ = UNI_CONV.zMin + 0.55;
+    const spacing = 0.95;
+    for (let i = 0; i < count; i++) {
+      const z = startZ + i * spacing;
+      if (z + recordD / 2 > UNI_CONV.zMax) break;
+      // Card body — cream slab on the belt
+      isoCube(parent, rc, cam, cx, UNI_CONV.yTop + 0.04, z, recordW, 0.20, recordD, CREAM);
+      // Title label on top
+      const [tx, ty] = cam(cx - recordW / 2 + 0.10, UNI_CONV.yTop + 0.26, z - recordD / 2 + 0.15);
+      const t = createText(tx, ty + 4, titles[i % titles.length], 'sketch-text');
+      t.setAttribute('fill', '#1f1d18');
+      t.setAttribute('text-anchor', 'start');
+      parent.appendChild(t);
+      // Color-as-meaning dot in the top-right of the card
+      const fp = FRAG[i % 4];
+      const dotPos = cam(cx + recordW / 2 - 0.13, UNI_CONV.yTop + 0.26, z - recordD / 2 + 0.15);
+      parent.appendChild(rc.circle(dotPos[0], dotPos[1], 4, {
+        fill: fp.top, stroke: '#1f1d18', strokeWidth: 1, fillStyle: 'solid', roughness: 0.8,
+      }));
+      // Two audit-trail lines representing log entries (fewer = cleaner)
+      for (let li = 0; li < 2; li++) {
+        const lz = z + 0.0 + li * 0.16;
+        const lineLen = recordW * 0.65 - li * 0.10;
+        const a = cam(cx - recordW / 2 + 0.10, UNI_CONV.yTop + 0.26, lz);
+        const b = cam(cx - recordW / 2 + 0.10 + lineLen, UNI_CONV.yTop + 0.26, lz);
+        parent.appendChild(rc.line(a[0], a[1], b[0], b[1], {
+          stroke: '#1f1d18', strokeWidth: 0.8, roughness: 0.6,
+        }));
+      }
+    }
+  }
+
+  // Outcomes shelf — a horizontal cream slab JUST OUTSIDE the cut's front edge,
+  // populated with audit-ready cards. The cards are the "outcomes" Unifize
+  // produces by clearing the blockages.
+  function drawOutcomesShelf(parent, rc, cam, cardCount) {
+    if (cardCount <= 0) return;
+    const shelfX = (CUT.xMin + CUT.xMax) / 2;
+    const shelfZ = CUT.zMax + 1.4;
+    const shelfW = (CUT.xMax - CUT.xMin) * 1.05;
+    // shelf base (cream slab)
+    isoCube(parent, rc, cam, shelfX, 0.18, shelfZ, shelfW, 0.18, 0.9, CREAM);
+    // Cards arranged in a row on top
+    const cardW = 0.85, cardH = 0.30, cardD = 0.55, gap = 0.18;
+    const total = Math.min(cardCount, 6);
+    const startX = shelfX - (total * cardW + (total - 1) * gap) / 2 + cardW / 2;
+    for (let i = 0; i < total; i++) {
+      const cx = startX + i * (cardW + gap);
+      isoCube(parent, rc, cam, cx, 0.36, shelfZ, cardW, cardH, cardD, CREAM);
+      // small color-as-meaning dot on top of each card
+      const dotPos = cam(cx - 0.30, 0.36 + cardH + 0.01, shelfZ);
+      const fp = FRAG[i % 4];
+      parent.appendChild(rc.circle(dotPos[0], dotPos[1], 4, {
+        fill: fp.top, stroke: '#1f1d18', strokeWidth: 0.8, fillStyle: 'solid', roughness: 0.8,
+      }));
+      // small line representing a row of text
+      const ln1A = cam(cx - 0.20, 0.36 + cardH + 0.01, shelfZ);
+      const ln1B = cam(cx + 0.30, 0.36 + cardH + 0.01, shelfZ);
+      parent.appendChild(rc.line(ln1A[0], ln1A[1], ln1B[0], ln1B[1], {
+        stroke: '#1f1d18', strokeWidth: 0.9, roughness: 0.6,
+      }));
+    }
+    // "OUTCOMES" label below the shelf
+    const [lblX, lblY] = cam(shelfX, 0, shelfZ + 0.7);
+    const lbl = createText(lblX, lblY + 22, 'OUTCOMES', 'sketch-zone');
+    lbl.setAttribute('fill', '#25497d');
+    parent.appendChild(lbl);
+  }
+
+  // Cards mid-flight — drawn at various progress points between a target
+  // fragment (start) and the outcomes shelf (end). Visually conveys "the
+  // record is rising out of the ground into the audit log."
+  function drawRisingOutcomes(parent, rc, cam, cardCount) {
+    if (cardCount <= 0) return;
+    const shelfX = (CUT.xMin + CUT.xMax) / 2;
+    const shelfY = 0.36;
+    const shelfZ = CUT.zMax + 1.4;
+    for (let i = 0; i < Math.min(cardCount, BLOCKED_FRAGMENTS.length); i++) {
+      const bf = BLOCKED_FRAGMENTS[i];
+      // Vary the progress per card so several are at different altitudes
+      const t = 0.35 + ((i * 0.13) % 0.5);
+      const x = bf.x + (shelfX - bf.x) * t;
+      const y = bf.y + (shelfY - bf.y) * t;
+      const z = bf.z + (shelfZ - bf.z) * t;
+      isoCube(parent, rc, cam, x, y, z, 0.48, 0.12, 0.36, CREAM);
+      // small color dot on top
+      const dotPos = cam(x - 0.15, y + 0.14, z);
+      const fp = FRAG[i % 4];
+      parent.appendChild(rc.circle(dotPos[0], dotPos[1], 3, {
+        fill: fp.top, stroke: '#1f1d18', strokeWidth: 0.7, fillStyle: 'solid', roughness: 0.8,
+      }));
+    }
+  }
+
+  // Floor-grid skip: don't draw grid lines across the cut area
+  function makeCutSkip() {
+    return (t, axis) => {
+      // skip grid lines that would cross through the cut area
+      if (axis === 'x') return t > CUT.xMin && t < CUT.xMax;
+      if (axis === 'z') return t > CUT.zMin && t < CUT.zMax;
+      return false;
+    };
+  }
+
+  // ──────────────────────────────────────────────────────
+  // SHARED PANEL BUILDER
+  // ──────────────────────────────────────────────────────
+  const SOR_A   = { x: -7, z: 6 };
+  const SOC_A   = { x: 7, z: -4 };
+  const GAP_CTR = { x: 1.8, z: -0.8 };
+
+  function buildSection(gridId, paradigmKind) {
+    // ── OBSERVATORY: 6 panels (unchanged) ────────────────
+    const observatory = {
+      costH:       [0,    1.0,  2.2,  3.5,  3.5,  3.0],
+      atomCount:   [0,    8,    18,   26,   16,   6],
+      debrisCount: [0,    5,    18,   34,   22,   8],
+      trickleCt:   [0,    2,    3,    4,    4,    5],
+      towerBands:  [0,    0,    0,    0,    1,    3],
+      towerCards:  [0,    0,    0,    0,    4,    12],
+      labels: [
+        '1. SoR + SoC',
+        '2. Cost begins',
+        '3. Hovering work + Debris',
+        '4. Peak coordination tax',
+        '5. Tower foundation',
+        '6. Audit facade live',
+      ],
+      panels: 6,
+    };
+
+    // ── EXCAVATION: 7 panels — Unifize-as-a-layer (box) + conveyor ─
+    const excavation = {
+      costH:           [0,    0.9,  1.7,  2.4,  2.4,  2.0,  1.4],
+      atomCount:       [0,    6,    14,   18,   10,   5,    2],
+      debrisCount:     [0,    4,    12,   22,   0,    0,    0],
+      trickleCt:       [0,    2,    3,    3,    3,    3,    3],
+      strataLayers:    [0,    0,    0,    4,    3,    2,    1],
+      unifizeBoxOn:    [0,    0,    0,    0,    1,    1,    1],
+      collectionLines: [0,    0,    0,    0,    5,    7,    2],
+      risingFragments: [0,    0,    0,    0,    3,    4,    0],
+      conveyorExt:     [0,    0,    0,    0,    0,    0.5,  1.0],
+      cleanRecords:    [0,    0,    0,    0,    0,    1,    3],
+      // ── NEW: relationships to SoR and SoC ──
+      contextArrows:   [0,    0,    0,    0,    1,    1,    1],   // SoR → box (CONTEXT)
+      captureArrows:   [0,    0,    0,    0,    1,    1,    1],   // SoC → box (CAPTURE)
+      showLegend:      [0,    0,    0,    0,    1,    1,    1],   // 3-flow legend in corner
+      labels: [
+        '1. SoR + SoC',
+        '2. Cost begins',
+        '3. Hovering work + Debris',
+        '4. Floor cut: strata revealed',
+        '5. Unifize box · 3 inputs established',
+        '6. Box collects · conveyor extends',
+        '7. Clean audit records out on the belt',
+      ],
+      panels: 7,
+    };
+
+    const cfg = paradigmKind === 'observatory' ? observatory : excavation;
+
+    const grid = document.getElementById(gridId);
+
+    for (let p = 0; p < cfg.panels; p++) {
+      const card = document.createElement('div');
+      card.className = 'var-card';
+
+      const head = document.createElement('div');
+      head.className = 'var-head';
+
+      const num = document.createElement('span');
+      num.className = 'var-num';
+      num.textContent = `0${p + 1}`;
+
+      const title = document.createElement('h3');
+      title.className = 'var-title';
+      title.textContent = cfg.labels[p];
+
+      head.appendChild(num);
+      head.appendChild(title);
+      card.appendChild(head);
+
+      const canvas = document.createElement('div');
+      canvas.className = 'var-canvas';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      const viewBoxW = 1280, viewBoxH = 540;
+      svg.setAttribute('viewBox', `0 0 ${viewBoxW} ${viewBoxH}`);
+      canvas.appendChild(svg);
+      card.appendChild(canvas);
+      grid.appendChild(card);
+
+      const rc = rough.svg(svg);
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      svg.appendChild(g);
+
+      const cam = makeCam({ az: 32, el: 35.264, scale: 28, cx: viewBoxW / 2, cy: viewBoxH * 0.65, lookX: 0, lookY: 3, lookZ: 1.0 });
+
+      // Floor (with cut for excavation paradigm in p >= 3)
+      const floorOpts = (paradigmKind === 'excavation' && p >= 3) ? { skip: makeCutSkip() } : {};
+      isoFloor(g, rc, cam, 14, 16, floorOpts);
+
+      // Excavation: draw the cut walls + strata BEFORE drawing SoR/SoC
+      // so the strata read as buried below the floor.
+      if (paradigmKind === 'excavation' && p >= 3) {
+        drawCutWalls(g, rc, cam);
+        drawStrata(g, rc, cam, cfg.strataLayers[p]);
+      }
+
+      // SoR + SoC — identical across both paradigms
+      drawSoR(g, rc, cam, SOR_A);
+      drawSoC(g, rc, cam, SOC_A, cfg.costH[p]);
+
+      // Hovering atoms over SoC
+      if (cfg.atomCount[p] > 0) {
+        drawCoordAtoms(g, rc, cam, { x: SOC_A.x, z: SOC_A.z }, cfg.atomCount[p], 200 + p * 10);
+      }
+
+      // Surface debris in the gap.
+      // Observatory: debris always in the gap.
+      // Excavation: debris only on the floor BEFORE the cut (p < 3); after the
+      // cut, the buried strata replaces surface debris.
+      if (paradigmKind === 'observatory' && cfg.debrisCount[p] > 0) {
+        drawDebris(g, rc, cam, GAP_CTR, cfg.debrisCount[p], 2.0, 400 + p * 10);
+      }
+      if (paradigmKind === 'excavation' && cfg.debrisCount[p] > 0 && p < 3) {
+        drawDebris(g, rc, cam, GAP_CTR, cfg.debrisCount[p], 2.0, 400 + p * 10);
+      }
+
+      // Trickle from SoC to SoR
+      if (cfg.trickleCt[p] > 0) {
+        drawTrickle(g, rc, cam, { x: SOC_A.x, z: SOC_A.z }, { x: SOR_A.x, z: SOR_A.z }, cfg.trickleCt[p], 700 + p * 10);
+      }
+
+      // ── PARADIGM-SPECIFIC: the Unifize element ─────────
+      if (paradigmKind === 'observatory') {
+        drawObservatoryTower(g, rc, cam, { builtBands: cfg.towerBands[p], cardCount: cfg.towerCards[p] });
+        if (cfg.towerBands[p] >= 1) {
+          drawObservatoryFilaments(g, rc, cam, SOR_A, SOC_A);
+        }
+      } else {
+        // Excavation:
+        //  - p4: cut + strata visible, no Unifize yet
+        //  - p5: box appears + all three inputs established (CONTEXT / CAPTURE / COLLECTION)
+        //  - p6: still collecting, conveyor starts to extend
+        //  - p7: conveyor full of clean audit-trail records
+        // Collection lines drawn first so they sit behind the box.
+        if (cfg.collectionLines[p] > 0) {
+          drawCollectionLines(g, rc, cam, cfg.collectionLines[p]);
+        }
+        if (cfg.risingFragments[p] > 0) {
+          drawRisingFragments(g, rc, cam, cfg.risingFragments[p]);
+        }
+        // CONTEXT arrows from SoR + CAPTURE arrows from SoC — drawn before
+        // the box so the box mass sits cleanly on top of where arrows land.
+        if (cfg.contextArrows[p]) {
+          drawContextArrows(g, rc, cam, SOR_A);
+        }
+        if (cfg.captureArrows[p]) {
+          drawCaptureArrows(g, rc, cam, SOC_A);
+        }
+        if (cfg.unifizeBoxOn[p]) {
+          drawUnifizeBox(g, rc, cam);
+        }
+        if (cfg.conveyorExt[p] > 0) {
+          drawConveyor(g, rc, cam, cfg.conveyorExt[p]);
+        }
+        if (cfg.cleanRecords[p] > 0) {
+          drawCleanRecords(g, rc, cam, cfg.cleanRecords[p]);
+        }
+        if (cfg.showLegend[p]) {
+          drawRelationshipLegend(g, rc, viewBoxW, viewBoxH);
+        }
+      }
+    }
+  }
+
+  function start() {
+    buildSection('grid-1', 'observatory');
+    buildSection('grid-2', 'excavation');
+  }
+  if (typeof rough !== 'undefined') {
+    start();
+  } else {
+    window.addEventListener('load', start);
+  }
+})();
+</script>
+</body>
+</html>

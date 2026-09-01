@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Exploration 1 — Design B (Pile-up led)</title>
+<style>
+  body {
+    margin: 0;
+    background: #08090d;
+    color: #d8d8e0;
+    font-family: ui-sans-serif, -apple-system, system-ui, sans-serif;
+  }
+  .wrap { max-width: 1700px; margin: 0 auto; padding: 24px 32px; }
+  h1 { font-size: 14px; font-weight: 600; letter-spacing: 0.04em; color: #aaa; margin: 0 0 4px; }
+  .sub { font-size: 12px; color: #666; margin: 0 0 16px; }
+  svg#scene { display: block; width: 100%; height: auto; background: #08090d; border: 1px solid #1a1a22; border-radius: 4px; }
+  .legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 20px; font-size: 12px; color: #888; }
+  .legend h3 { color: #ccc; font-size: 12px; font-weight: 600; margin: 0 0 6px; letter-spacing: 0.04em; }
+  .legend p { margin: 4px 0; line-height: 1.5; }
+  .swatch { display: inline-block; width: 10px; height: 10px; vertical-align: middle; margin-right: 6px; border: 1px solid #2a2a30; }
+  .meta { margin-top: 24px; padding: 16px; background: #0e0f14; border: 1px solid #1a1a22; border-radius: 4px; font-size: 12px; color: #888; line-height: 1.6; }
+  .meta strong { color: #ccc; }
+  .meta em { color: #b8a888; font-style: normal; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>EXPLORATION 1 — DESIGN B · PILE-UP LED</h1>
+  <p class="sub">Records and coord as silhouettes. The pile is the hero. A modest floor stain reinforces the residue clumps.</p>
+  <svg id="scene" viewBox="0 0 1600 900"></svg>
+  <div class="legend">
+    <div>
+      <h3>SYSTEMS OF RECORD</h3>
+      <p><span class="swatch" style="background:#3d4049"></span>Graphite cluster · 6 volumes · 4-square glyph only (no text)</p>
+      <p>Plurality without enumeration. The glyph signals "system" without naming which.</p>
+    </div>
+    <div>
+      <h3>SYSTEMS OF COORDINATION</h3>
+      <p><span class="swatch" style="background:#3a6aff"></span>Blue cluster · shape grammar only · no top icons</p>
+      <p>Chat-stacks, thread-pillars, tilted slabs. The shapes do the work.</p>
+    </div>
+    <div>
+      <h3>THE PILE-UP (hero)</h3>
+      <p><span class="swatch" style="background:#c5b89e"></span>Cream residue · 3 ink kinds · ~50% blank</p>
+      <p><span class="swatch" style="background:#6a5238"></span>Modest floor stain under the densest pile</p>
+    </div>
+  </div>
+  <div class="meta">
+    Design intent: <strong>recognition is quiet, the gap is loud</strong>. Records identify themselves through silhouette and 4-square glyph, not through labels. Coord identifies through shape grammar. The pile-up gets all the visual specificity, plus a low-opacity stain in the gap band that suggests <em>this has been here long enough to mark the floor</em>.
+  </div>
+</div>
+
+<script>
+(() => {
+  const svg = document.getElementById('scene');
+  const NS = 'http://www.w3.org/2000/svg';
+  const defs = document.createElementNS(NS, 'defs');
+  svg.appendChild(defs);
+
+  const SCALE = 32;
+  const OX = 800;
+  const OY = 470;
+  const PX = 0.940, PXY = 0.171;
+  const PZ = -0.342, PZY = 0.470;
+  const PYY = -0.866;
+
+  const proj = (x, y, z) => [
+    SCALE * (PX * x + PZ * z) + OX,
+    SCALE * (PXY * x + PYY * y + PZY * z) + OY,
+  ];
+
+  const make = (name, attrs, parent) => {
+    const e = document.createElementNS(NS, name);
+    for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+    (parent || svg).appendChild(e);
+    return e;
+  };
+
+  let gradCounter = 0;
+  function radialBlob(parent, cx, cy, rx, ry, color, peakOpacity) {
+    const id = `blob-${gradCounter++}`;
+    const g = make('radialGradient', { id, cx: '50%', cy: '50%', r: '50%' }, defs);
+    make('stop', { offset: '0%', 'stop-color': color, 'stop-opacity': peakOpacity }, g);
+    make('stop', { offset: '60%', 'stop-color': color, 'stop-opacity': peakOpacity * 0.45 }, g);
+    make('stop', { offset: '100%', 'stop-color': color, 'stop-opacity': 0 }, g);
+    make('ellipse', { cx, cy, rx, ry, fill: `url(#${id})` }, parent);
+  }
+
+  function isoBox({ cx, cz, yBase = 0, w, h, d, top, right, front, edge = 'rgba(255,255,255,0.22)', edgeWidth = 0.6, rotate = 0, parent }) {
+    const hw = w / 2, hd = d / 2;
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const localToWorld = (lx, ly, lz) => [
+      cx + lx * cosR - lz * sinR,
+      yBase + ly,
+      cz + lx * sinR + lz * cosR,
+    ];
+    const c = (lx, ly, lz) => proj(...localToWorld(lx, ly, lz));
+    const blf = c(-hw, 0, hd);
+    const brf = c(hw, 0, hd);
+    const brb = c(hw, 0, -hd);
+    const tlf = c(-hw, h, hd);
+    const trf = c(hw, h, hd);
+    const trb = c(hw, h, -hd);
+    const tlb = c(-hw, h, -hd);
+    const pp = pts => pts.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
+    const g = parent || svg;
+    make('polygon', { points: pp([blf, brf, trf, tlf]), fill: front, stroke: edge, 'stroke-width': edgeWidth }, g);
+    make('polygon', { points: pp([brf, brb, trb, trf]), fill: right, stroke: edge, 'stroke-width': edgeWidth }, g);
+    make('polygon', { points: pp([tlb, trb, trf, tlf]), fill: top, stroke: edge, 'stroke-width': edgeWidth }, g);
+  }
+
+  function placeFlat(cx, cz, yLevel, rotate = 0, parent) {
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const ax = SCALE * (PX * cosR + PZ * sinR);
+    const ay = SCALE * (PXY * cosR + PZY * sinR);
+    const bx = SCALE * (PX * (-sinR) + PZ * cosR);
+    const by = SCALE * (PXY * (-sinR) + PZY * cosR);
+    const [tx, ty] = proj(cx, yLevel + 0.001, cz);
+    return make('g', { transform: `matrix(${ax.toFixed(3)} ${ay.toFixed(3)} ${bx.toFixed(3)} ${by.toFixed(3)} ${tx.toFixed(2)} ${ty.toFixed(2)})` }, parent);
+  }
+
+  // ── 1. FLOOR GRID ──
+  const gridG = make('g', { opacity: '0.55' });
+  const FLOOR = 22;
+  const DIV = 44;
+  const half = FLOOR / 2;
+  const step = FLOOR / DIV;
+  for (let i = 0; i <= DIV; i++) {
+    const t = -half + i * step;
+    const inGap = Math.abs(t) < 2.4;
+    const [a, b] = proj(-half, 0, t);
+    const [c1, d1] = proj(half, 0, t);
+    make('line', { x1: a, y1: b, x2: c1, y2: d1, stroke: '#1a1a22', 'stroke-width': 0.5 }, gridG);
+    const [e, f] = proj(t, 0, -half);
+    const [g1, h1] = proj(t, 0, half);
+    make('line', { x1: e, y1: f, x2: g1, y2: h1, stroke: inGap ? '#0c0d11' : '#1a1a22', 'stroke-width': 0.5 }, gridG);
+  }
+
+  // ── 2. FLOOR STAIN (modest — supporting cast) ──
+  const stainLayer = placeFlat(0, 0, 0, 0);
+  const stainBlobs = [
+    { x: 0.0, y: -3.0, rx: 1.6, ry: 1.4, color: '#6a5238', op: 0.32 },
+    { x: 0.2, y:  0.0, rx: 2.0, ry: 1.7, color: '#6a5238', op: 0.40 },
+    { x: -0.4, y: 3.0, rx: 1.5, ry: 1.3, color: '#6a5238', op: 0.30 },
+    { x: 1.0, y: -1.5, rx: 0.8, ry: 0.7, color: '#6a5238', op: 0.20 },
+    { x: -0.8, y: 1.5, rx: 0.7, ry: 0.6, color: '#6a5238', op: 0.18 },
+  ];
+  for (const b of stainBlobs) {
+    radialBlob(stainLayer, b.x, b.y, b.rx, b.ry, b.color, b.op);
+  }
+
+  // ── 3. PILE-UP RESIDUE (3 ink kinds, ~50% blank) ──
+  function mulberry32(seed) {
+    return function () {
+      let t = (seed += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rand = mulberry32(13);
+
+  const clumps = [
+    { cz: -3.0, count: 14, spread: 1.6 },
+    { cz:  0.0, count: 18, spread: 2.0 },
+    { cz:  3.0, count: 12, spread: 1.6 },
+  ];
+  const stragglers = 8;
+
+  const KINDS = ['text-lines', 'grid', 'signature', 'blank', 'blank', 'blank'];
+  const pickKind = () => KINDS[Math.floor(rand() * KINDS.length)];
+
+  const residue = [];
+  for (const clump of clumps) {
+    for (let i = 0; i < clump.count; i++) {
+      const u = rand(), v = rand();
+      const gx = Math.sqrt(-2 * Math.log(u + 1e-9)) * Math.cos(2 * Math.PI * v);
+      const gz = Math.sqrt(-2 * Math.log(u + 1e-9)) * Math.sin(2 * Math.PI * v);
+      const cx = Math.max(-2.0, Math.min(2.0, gx * 0.9));
+      const cz = clump.cz + Math.max(-clump.spread, Math.min(clump.spread, gz * 0.8));
+      const elongated = rand() < 0.3;
+      const baseW = 0.40 + rand() * 0.55;
+      const baseD = 0.32 + rand() * 0.45;
+      const w = elongated ? baseW * (1.5 + rand() * 0.7) : baseW;
+      const d = baseD;
+      const h = 0.04 + rand() * 0.06;
+      const tones = [
+        ['#d6cda8', '#a8956a', '#8a7858'],
+        ['#c8bb98', '#9a8860', '#7c6a4c'],
+        ['#bcab85', '#8e7c54', '#705e40'],
+        ['#cec3a0', '#a09060', '#7e6e4e'],
+      ];
+      const [topC, rightC, frontC] = tones[Math.floor(rand() * 4)];
+      const rotate = (rand() - 0.5) * 36;
+      residue.push({ cx, cz, w, h, d, topC, rightC, frontC, rotate, kind: pickKind() });
+    }
+  }
+  for (let i = 0; i < stragglers; i++) {
+    residue.push({
+      cx: (rand() - 0.5) * 4.0,
+      cz: (rand() - 0.5) * 9.0,
+      w: 0.34 + rand() * 0.4, h: 0.04 + rand() * 0.05, d: 0.28 + rand() * 0.4,
+      topC: '#bcae88', rightC: '#8e7c54', frontC: '#705e40',
+      rotate: (rand() - 0.5) * 36, kind: pickKind(),
+    });
+  }
+  residue.sort((a, b) => (a.cx + a.cz) - (b.cx + b.cz));
+
+  const residueG = make('g');
+  for (const r of residue) {
+    isoBox({
+      cx: r.cx, cz: r.cz, yBase: 0,
+      w: r.w, h: r.h, d: r.d, rotate: r.rotate,
+      top: r.topC, right: r.rightC, front: r.frontC,
+      edge: 'rgba(120,90,40,0.35)', edgeWidth: 0.4,
+      parent: residueG,
+    });
+    if (r.kind === 'blank') continue;
+    const ink = '#4a3820';
+    const inkOp = 0.55;
+    const margin = 0.10;
+    const usableW = r.w - margin * 2;
+    const usableD = r.d - margin * 2;
+    const inkLayer = placeFlat(r.cx, r.cz, r.h, r.rotate, residueG);
+
+    if (r.kind === 'text-lines') {
+      const lines = 3 + Math.floor(rand() * 2);
+      for (let i = 0; i < lines; i++) {
+        const y = -usableD / 2 + (i + 1) * (usableD / (lines + 1));
+        const lineW = usableW * (0.6 + rand() * 0.35);
+        make('line', { x1: -lineW / 2, y1: y, x2: lineW / 2, y2: y, stroke: ink, 'stroke-width': 0.025, opacity: inkOp }, inkLayer);
+      }
+    } else if (r.kind === 'grid') {
+      for (let i = 1; i < 3; i++) {
+        const x = -usableW / 2 + i * (usableW / 3);
+        make('line', { x1: x, y1: -usableD / 2, x2: x, y2: usableD / 2, stroke: ink, 'stroke-width': 0.020, opacity: inkOp }, inkLayer);
+      }
+      for (let j = 1; j < 3; j++) {
+        const y = -usableD / 2 + j * (usableD / 3);
+        make('line', { x1: -usableW / 2, y1: y, x2: usableW / 2, y2: y, stroke: ink, 'stroke-width': 0.020, opacity: inkOp }, inkLayer);
+      }
+    } else if (r.kind === 'signature') {
+      const seg = 7;
+      const startX = -usableW * 0.4;
+      const endX = usableW * 0.4;
+      const yMid = 0.02;
+      let path = `M ${startX} ${yMid}`;
+      for (let i = 1; i <= seg; i++) {
+        const x = startX + (endX - startX) * (i / seg);
+        const y = yMid + (rand() - 0.5) * 0.08;
+        path += ` Q ${x - (endX - startX) / (seg * 2)} ${y - 0.05} ${x} ${y}`;
+      }
+      make('path', { d: path, fill: 'none', stroke: ink, 'stroke-width': 0.032, opacity: inkOp + 0.1 }, inkLayer);
+      make('line', { x1: startX - 0.04, y1: yMid + 0.10, x2: endX + 0.04, y2: yMid + 0.10, stroke: ink, 'stroke-width': 0.018, opacity: inkOp - 0.15 }, inkLayer);
+    }
+  }
+
+  // ── 4. PLINTHS ──
+  isoBox({ cx: -7.5, cz: 0, yBase: 0, w: 10, h: 0.6, d: 9, top: '#1c1e26', right: '#11131a', front: '#0a0c12', edge: 'rgba(255,255,255,0.18)', edgeWidth: 0.7 });
+  isoBox({ cx:  7.5, cz: 0, yBase: 0, w: 10, h: 0.2, d: 9, top: '#11131a', right: '#0a0c12', front: '#070a10', edge: 'rgba(255,255,255,0.18)', edgeWidth: 0.7 });
+  // 3x3 cell lines on coord plinth
+  const cellG = make('g', { opacity: '0.5' });
+  const PXc = 7.5, PZc = 0, PWc = 10, PDc = 9, PYc = 0.21;
+  for (let i = 1; i < 3; i++) {
+    const lx = PXc - PWc / 2 + (i * PWc / 3);
+    const [x1, y1] = proj(lx, PYc, PZc - PDc / 2);
+    const [x2, y2] = proj(lx, PYc, PZc + PDc / 2);
+    make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.13)', 'stroke-width': 0.5 }, cellG);
+  }
+  for (let i = 1; i < 3; i++) {
+    const lz = PZc - PDc / 2 + (i * PDc / 3);
+    const [x1, y1] = proj(PXc - PWc / 2, PYc, lz);
+    const [x2, y2] = proj(PXc + PWc / 2, PYc, lz);
+    make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.13)', 'stroke-width': 0.5 }, cellG);
+  }
+
+  // ── 5. RECORDS (graphite + strata + 4-square glyph only) ──
+  const records = [
+    { cx: -10.5, cz: -2.8, w: 2.0, h: 4.0, d: 2.0 },
+    { cx:  -7.0, cz: -2.8, w: 2.5, h: 2.8, d: 2.5 },
+    { cx: -10.0, cz:  0.5, w: 1.8, h: 3.2, d: 1.8 },
+    { cx:  -6.5, cz:  0.5, w: 2.2, h: 2.5, d: 2.2 },
+    { cx:  -8.5, cz:  3.0, w: 1.4, h: 1.8, d: 1.4 },
+    { cx:  -4.5, cz:  2.0, w: 1.5, h: 3.5, d: 1.5 },
+  ];
+  records.sort((a, b) => (a.cx + a.cz) - (b.cx + b.cz));
+  const recordG = make('g');
+  for (const r of records) {
+    isoBox({
+      cx: r.cx, cz: r.cz, yBase: 0.6, w: r.w, h: r.h, d: r.d,
+      top: '#3d4049', right: '#2a2c34', front: '#1c1e26',
+      edge: 'rgba(255,255,255,0.30)', edgeWidth: 0.65, parent: recordG,
+    });
+    const strataCount = Math.max(4, Math.floor(r.h * 1.8));
+    for (let i = 1; i < strataCount; i++) {
+      const sy = (r.h / strataCount) * i;
+      const [x1, y1] = proj(r.cx - r.w / 2, 0.6 + sy, r.cz + r.d / 2);
+      const [x2, y2] = proj(r.cx + r.w / 2, 0.6 + sy, r.cz + r.d / 2);
+      make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.10)', 'stroke-width': 0.4 }, recordG);
+      const [x3, y3] = proj(r.cx + r.w / 2, 0.6 + sy, r.cz + r.d / 2);
+      const [x4, y4] = proj(r.cx + r.w / 2, 0.6 + sy, r.cz - r.d / 2);
+      make('line', { x1: x3, y1: y3, x2: x4, y2: y4, stroke: 'rgba(255,255,255,0.07)', 'stroke-width': 0.4 }, recordG);
+    }
+    // 4-square glyph on top, no text
+    const top = placeFlat(r.cx, r.cz, 0.6 + r.h, 0, recordG);
+    const isz = Math.min(r.w, r.d) * 0.18;
+    const igap = isz * 0.30;
+    const totalW = isz * 2 + igap;
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 2; col++) {
+        make('rect', {
+          x: -totalW / 2 + col * (isz + igap),
+          y: -totalW / 2 + row * (isz + igap),
+          width: isz, height: isz,
+          rx: isz * 0.15,
+          fill: 'white', opacity: 0.92,
+        }, top);
+      }
+    }
+  }
+
+  // ── 6. COORD ELEMENTS (shape grammar only — no top icons) ──
+  const COORD_VARIANTS = [
+    { top: '#3a6aff', right: '#1840ff', front: '#0c2cb8' },
+    { top: '#5080ff', right: '#2050ff', front: '#0e30c8' },
+    { top: '#2858ff', right: '#0e3aee', front: '#0518a0' },
+  ];
+  const CELL_X = [4.83, 7.5, 10.17];
+  const CELL_Z = [-3, 0, 3];
+  const coords = [
+    { type: 'chat-stack',    cell: [0, 0], w: 1.2, h: 1.5, d: 1.2 },
+    { type: 'thread-pillar', cell: [0, 1], w: 0.8, h: 3.0, d: 0.8 },
+    { type: 'email-slab',    cell: [0, 2], w: 2.0, h: 0.4, d: 1.4, rotate: -8 },
+    { type: 'meeting-tile',  cell: [1, 0], w: 1.6, h: 0.3, d: 1.6 },
+    { type: 'spreadsheet',   cell: [1, 2], w: 2.2, h: 0.4, d: 1.8 },
+    { type: 'doc-slab',      cell: [2, 0], w: 1.8, h: 0.3, d: 1.4, rotate: 6 },
+    { type: 'chat-stack',    cell: [2, 1], w: 1.4, h: 1.2, d: 1.4 },
+    { type: 'thread-pillar', cell: [2, 2], w: 0.7, h: 2.5, d: 0.7 },
+  ];
+  const coordEntries = coords.map((c, i) => ({
+    ...c, cx: CELL_X[c.cell[1]], cz: CELL_Z[c.cell[0]], variant: COORD_VARIANTS[i % 3],
+  }));
+  coordEntries.sort((a, b) => (a.cx + a.cz) - (b.cx + b.cz));
+
+  const coordG = make('g');
+  for (const c of coordEntries) {
+    if (c.type === 'meeting-tile') {
+      const mini = 0.5, gap = 0.1;
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+        isoBox({
+          cx: c.cx + (i - 0.5) * (mini + gap),
+          cz: c.cz + (j - 0.5) * (mini + gap),
+          yBase: 0.2, w: mini, h: 0.5 + i * 0.1, d: mini,
+          top: c.variant.top, right: c.variant.right, front: c.variant.front,
+          edge: 'rgba(255,255,255,0.32)', parent: coordG,
+        });
+      }
+      continue;
+    }
+    if (c.type === 'chat-stack') {
+      const offsets = [
+        { dx: 0, dz: 0, h: c.h * 0.55 },
+        { dx: 0.15, dz: -0.2, h: c.h * 0.4 },
+        { dx: -0.1, dz: 0.18, h: c.h * 0.7 },
+      ];
+      for (const o of offsets) {
+        isoBox({
+          cx: c.cx + o.dx, cz: c.cz + o.dz, yBase: 0.2,
+          w: 0.7, h: o.h, d: 0.7,
+          top: c.variant.top, right: c.variant.right, front: c.variant.front,
+          edge: 'rgba(255,255,255,0.32)', parent: coordG,
+        });
+      }
+      continue;
+    }
+    isoBox({
+      cx: c.cx, cz: c.cz, yBase: 0.2,
+      w: c.w, h: c.h, d: c.d, rotate: c.rotate || 0,
+      top: c.variant.top, right: c.variant.right, front: c.variant.front,
+      edge: 'rgba(255,255,255,0.32)', parent: coordG,
+    });
+    if (c.type === 'spreadsheet') {
+      for (let i = 1; i < 5; i++) {
+        const sx = c.cx - c.w / 2 + (i * c.w / 5);
+        const [x1, y1] = proj(sx, 0.2 + c.h + 0.001, c.cz - c.d / 2);
+        const [x2, y2] = proj(sx, 0.2 + c.h + 0.001, c.cz + c.d / 2);
+        make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.40)', 'stroke-width': 0.4 }, coordG);
+      }
+      for (let i = 1; i < 4; i++) {
+        const sz = c.cz - c.d / 2 + (i * c.d / 4);
+        const [x1, y1] = proj(c.cx - c.w / 2, 0.2 + c.h + 0.001, sz);
+        const [x2, y2] = proj(c.cx + c.w / 2, 0.2 + c.h + 0.001, sz);
+        make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.40)', 'stroke-width': 0.4 }, coordG);
+      }
+    }
+    if (c.type === 'thread-pillar') {
+      for (let i = 1; i < 4; i++) {
+        const sy = (c.h / 4) * i;
+        const [x1, y1] = proj(c.cx - c.w / 2, 0.2 + sy, c.cz + c.d / 2);
+        const [x2, y2] = proj(c.cx + c.w / 2, 0.2 + sy, c.cz + c.d / 2);
+        make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.30)', 'stroke-width': 0.5 }, coordG);
+      }
+    }
+  }
+})();
+</script>
+</body>
+</html>

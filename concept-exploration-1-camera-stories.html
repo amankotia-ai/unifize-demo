@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Concept Exploration 1 — Camera Stories (v3 topology, 3 zones)</title>
+<style>
+  :root {
+    --bg: #08090d;
+    --ink: #d8d8e0;
+    --hint: #4a4a52;
+    --line: rgba(255,255,255,0.07);
+    --panel-line: rgba(255,255,255,0.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.head {
+    position: sticky; top: 0; z-index: 10;
+    padding: 12px 28px 10px;
+    font-size: 10.5px; letter-spacing: 0.1em;
+    background: rgba(8,9,13,0.92);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  header.head .tag { color: #6e6e78; }
+  header.head .toc { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 6px; }
+  header.head .toc a { color: #50505a; text-decoration: none; transition: color 0.15s; }
+  header.head .toc a:hover { color: var(--ink); }
+  section.concept {
+    padding: 8vh 4vw 5vh;
+    display: flex; flex-direction: column;
+    border-bottom: 1px solid var(--line);
+  }
+  .title {
+    font-size: 10.5px; letter-spacing: 0.22em;
+    color: #7a7a82;
+    margin: 0 0 2vh;
+    text-transform: uppercase;
+  }
+  .title .num { color: #3a3a42; margin-right: 18px; }
+  .strip {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    display: block;
+  }
+  .strip svg { width: 100%; height: auto; display: block; }
+  .panel-frame { stroke: var(--panel-line); fill: none; stroke-width: 0.6; }
+  .panel-num { fill: #2c2c34; font-size: 11px; letter-spacing: 0.12em; font-family: ui-monospace, monospace; }
+  .cam-tag { fill: #353540; font-size: 9px; letter-spacing: 0.1em; font-family: ui-monospace, monospace; }
+  .band-label { font-family: ui-monospace, monospace; font-size: 6.5px; letter-spacing: 0.10em; fill: rgba(255,255,255,0.55); }
+  .billboard-eyebrow { font-family: ui-monospace, monospace; font-size: 6.5px; letter-spacing: 0.18em; fill: #4a78cc; }
+  .billboard-meta { font-family: ui-monospace, monospace; font-size: 6.5px; fill: rgba(255,255,255,0.65); }
+  .billboard-row { font-family: ui-monospace, monospace; font-size: 6.5px; fill: rgba(255,255,255,0.78); }
+  .record-label { font-family: ui-monospace, monospace; font-size: 6px; letter-spacing: 0.10em; fill: rgba(255,255,255,0.65); }
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div><span class="tag">CONCEPT EXPLORATION 1 / V3 / CAMERA STORIES — 3 zones: PROBLEM · UNIFIZE PLATFORM · OUTCOME SURFACE</span></div>
+  <div class="toc" id="toc"></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+(() => {
+  // ──────────────────────────────────────────────────────
+  // CAMERA — variable az/el/zoom + look-target offset.
+  // Each panel is a keyframe. Reading panel→panel = the camera move.
+  // ──────────────────────────────────────────────────────
+  function makeCam(opts) {
+    const az = (opts.az ?? 45) * Math.PI / 180;
+    const el = (opts.el ?? 30) * Math.PI / 180;
+    const scale = opts.scale ?? 16;
+    const cx = opts.cx ?? 0;
+    const cy = opts.cy ?? 0;
+    // look-target offsets the world so this world point projects to (cx,cy)
+    const lx = opts.lookX ?? 0;
+    const ly = opts.lookY ?? 0;
+    const lz = opts.lookZ ?? 0;
+    const ca = Math.cos(az), sa = Math.sin(az);
+    const ce = Math.cos(el), se = Math.sin(el);
+    return (x, y, z) => {
+      const X = x - lx, Y = y - ly, Z = z - lz;
+      const sx = ca * X - sa * Z;
+      const depth = sa * X + ca * Z;
+      const sy = depth * se - Y * ce;
+      return [cx + sx * scale, cy + sy * scale];
+    };
+  }
+
+  const NS = (name, attrs, parent) => {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', name);
+    if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const pts = (arr) => arr.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
+
+  // ──────────────────────────────────────────────────────
+  // PALETTES
+  // ──────────────────────────────────────────────────────
+  const SoR = { top: '#3D4049', right: '#1C1E25', front: '#2A2D35', stroke: 'rgba(255,255,255,0.20)' };
+  const SoC = { top: '#272930', right: '#0F1116', front: '#1B1D24', stroke: 'rgba(255,255,255,0.20)' };
+  const SoC_PLINTH = { top: '#1A1C22', right: '#08090D', front: '#101218', stroke: 'rgba(255,255,255,0.16)' };
+  // Three Unifize bands (Outcomes+AI, Product Suite, Workflow Components) — Anthropic boundary style
+  const UNI_BAND_A = { top: '#4078ff', right: '#0040C9', front: '#2862ff', stroke: 'rgba(255,255,255,0.32)' };
+  const UNI_BAND_B = { top: '#2244aa', right: '#122670', front: '#1a3590', stroke: 'rgba(255,255,255,0.24)' };
+  const UNI_BAND_C = { top: '#182558', right: '#080e28', front: '#101840', stroke: 'rgba(255,255,255,0.20)' };
+  const CREAM = { top: '#E8D8B0', right: '#8C7748', front: '#B59E68', stroke: 'rgba(120,90,40,0.40)' };
+
+  // Color-as-meaning fragments (kit rule: yellow=approvals, green=resolved, blue=evidence, red=disagreement)
+  const FRAG_PALETTES = [
+    { top: '#F0C84A', right: '#9D7A1F', front: '#C49C2E', stroke: 'rgba(120,90,30,0.35)' },
+    { top: '#6BB07C', right: '#2E5A38', front: '#4A8253', stroke: 'rgba(40,80,50,0.40)' },
+    { top: '#7AA0E0', right: '#2E4D8A', front: '#4D72B8', stroke: 'rgba(40,60,120,0.40)' },
+    { top: '#D8635A', right: '#7A2B25', front: '#A8413A', stroke: 'rgba(110,40,30,0.40)' },
+  ];
+
+  const FLOOR_GRID = 'rgba(255,255,255,0.045)';
+
+  // ──────────────────────────────────────────────────────
+  // PRIMITIVES
+  // ──────────────────────────────────────────────────────
+  function isoCube(parent, cam, x, y, z, w, h, d, palette, rotate = 0) {
+    const hw = w / 2, hd = d / 2;
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const rot = (lx, lz) => [x + lx * cosR - lz * sinR, z + lx * sinR + lz * cosR];
+    const C = (lx, ly, lz) => {
+      const [wx, wz] = rot(lx, lz);
+      return cam(wx, y + ly, wz);
+    };
+    const A = C(-hw, 0, -hd), B = C(hw, 0, -hd), Cc = C(hw, 0, hd), D = C(-hw, 0, hd);
+    const E = C(-hw, h, -hd), F = C(hw, h, -hd), G = C(hw, h, hd), H = C(-hw, h, hd);
+    NS('polygon', { points: pts([E, F, G, H]), fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    NS('polygon', { points: pts([D, Cc, G, H]), fill: palette.front, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    NS('polygon', { points: pts([Cc, B, F, G]), fill: palette.right, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+  }
+
+  function isoFloor(parent, cam, half = 8, div = 16) {
+    const g = NS('g', { opacity: 0.55 }, parent);
+    const step = (half * 2) / div;
+    for (let i = 0; i <= div; i++) {
+      const t = -half + i * step;
+      const a = cam(-half, 0, t), b = cam(half, 0, t);
+      NS('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: FLOOR_GRID, 'stroke-width': 0.4 }, g);
+      const c = cam(t, 0, -half), d = cam(t, 0, half);
+      NS('line', { x1: c[0], y1: c[1], x2: d[0], y2: d[1], stroke: FLOOR_GRID, 'stroke-width': 0.4 }, g);
+    }
+  }
+
+  function mulberry32(seed) {
+    let t = seed;
+    return function () {
+      t = (t + 0x6D2B79F5) >>> 0;
+      let x = t;
+      x = Math.imul(x ^ (x >>> 15), x | 1);
+      x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ──────────────────────────────────────────────────────
+  // VOCABULARY — composite scene pieces from v3.tsx topology
+  // ──────────────────────────────────────────────────────
+
+  // 1) SoR cluster (problem zone) — 4 records labeled QMS/DMS/ERP/PLM on a small tier
+  function drawSoR(parent, cam, anchor = { x: 8, z: -7.5 }, growth = [1, 1, 1, 1]) {
+    // tier plinth
+    isoCube(parent, cam, anchor.x, 0, anchor.z, 5.0, 0.30, 5.0, { top: '#15171c', right: '#08090d', front: '#0e1015', stroke: 'rgba(255,255,255,0.16)' });
+    const layout = [
+      { lx: -1.5, lz: -1.5, label: 'QMS' },
+      { lx:  1.5, lz: -1.5, label: 'DMS' },
+      { lx:  1.5, lz:  1.5, label: 'ERP' },
+      { lx: -1.5, lz:  1.5, label: 'PLM' },
+    ];
+    layout.forEach((c, i) => {
+      const w = 1.6, h = 0.9 * (growth[i] || 1), d = 1.6;
+      isoCube(parent, cam, anchor.x + c.lx, 0.30, anchor.z + c.lz, w, h, d, SoR);
+      // label inscribed on top face (small mono)
+      const [lx, ly] = cam(anchor.x + c.lx, 0.30 + h + 0.01, anchor.z + c.lz);
+      NS('text', { x: lx, y: ly + 2, 'text-anchor': 'middle', class: 'record-label' }, parent).textContent = c.label;
+    });
+  }
+
+  // 2) SoC tile-stack (problem zone) — plinth + Microsoft 2×2 grid (Outlook/Excel/SharePoint/Teams)
+  function drawSoC(parent, cam, anchor = { x: -10, z: 10 }) {
+    isoCube(parent, cam, anchor.x, 0, anchor.z, 4.5, 0.25, 4.5, SoC_PLINTH);
+    const tileSize = 1.5, tileGap = 0.10;
+    const tools = ['outlook', 'excel', 'sharepoint', 'teams'];
+    let i = 0;
+    for (let gx = 0; gx < 2; gx++) {
+      for (let gz = 0; gz < 2; gz++) {
+        const ox = (gx - 0.5) * (tileSize + tileGap);
+        const oz = (gz - 0.5) * (tileSize + tileGap);
+        isoCube(parent, cam, anchor.x + ox, 0.25, anchor.z + oz, tileSize, 0.22, tileSize, SoC);
+        msTile(parent, cam, anchor.x + ox, 0.47 + 0.005, anchor.z + oz, tools[i], tileSize * 0.7);
+        i++;
+      }
+    }
+  }
+
+  function msTile(parent, cam, x, y, z, kind, size = 0.9) {
+    const [px, py] = cam(x, y, z);
+    const colors = { outlook: '#1B6BB5', excel: '#21A366', teams: '#6264A7', sharepoint: '#038387' };
+    const s = size * 18;
+    NS('rect', { x: px - s/2, y: py - s/2, width: s, height: s, fill: colors[kind] || '#777', stroke: 'rgba(255,255,255,0.30)', 'stroke-width': 0.5, rx: 1.5 }, parent);
+    const letter = { outlook: 'O', excel: 'X', teams: 'T', sharepoint: 'S' }[kind] || '·';
+    NS('text', {
+      x: px, y: py + s*0.18,
+      'text-anchor': 'middle',
+      fill: 'rgba(255,255,255,0.90)',
+      'font-family': 'ui-monospace, monospace',
+      'font-weight': 700,
+      'font-size': s * 0.55,
+    }, parent).textContent = letter;
+  }
+
+  // 3) Chaos atoms above SoC (color-as-meaning)
+  function drawChaos(parent, cam, center, count = 24, seed = 7) {
+    const rng = mulberry32(seed);
+    const kinds = ['env', 'chat', 'doc', 'cal', 'at', 'call'];
+    for (let i = 0; i < count; i++) {
+      const x = center.x + (rng() - 0.5) * 5;
+      const y = 1.2 + rng() * 2.2;
+      const z = center.z + (rng() - 0.5) * 5;
+      const fp = FRAG_PALETTES[Math.floor(rng() * 4)];
+      atom(parent, cam, x, y, z, kinds[Math.floor(rng() * kinds.length)], fp);
+    }
+  }
+
+  function atom(parent, cam, x, y, z, kind, palette) {
+    const [px, py] = cam(x, y, z);
+    const s = 7;
+    palette = palette || FRAG_PALETTES[2];
+    if (kind === 'env') {
+      NS('rect', { x: px - s, y: py - s*0.6, width: s*2, height: s*1.2, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+      NS('polyline', { points: `${px - s},${py - s*0.6} ${px},${py + s*0.2} ${px + s},${py - s*0.6}`, fill: 'none', stroke: palette.right, 'stroke-width': 0.6 }, parent);
+    } else if (kind === 'chat') {
+      NS('rect', { x: px - s, y: py - s*0.6, width: s*2, height: s*1.2, rx: 2, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+    } else if (kind === 'doc') {
+      NS('rect', { x: px - s*0.6, y: py - s, width: s*1.2, height: s*1.6, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+      for (let i = 1; i <= 2; i++) {
+        const ly = py - s + (i * s*1.6 / 3);
+        NS('line', { x1: px - s*0.4, y1: ly, x2: px + s*0.4, y2: ly, stroke: palette.right, 'stroke-width': 0.3 }, parent);
+      }
+    } else if (kind === 'cal') {
+      NS('rect', { x: px - s, y: py - s, width: s*2, height: s*1.6, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+    } else if (kind === 'at') {
+      NS('circle', { cx: px, cy: py, r: s*0.65, fill: 'none', stroke: palette.top, 'stroke-width': 0.8 }, parent);
+    } else if (kind === 'call') {
+      NS('circle', { cx: px, cy: py, r: s*0.65, fill: 'none', stroke: palette.top, 'stroke-width': 0.8 }, parent);
+      NS('path', { d: `M${px - s*0.3},${py - s*0.1} q${s*0.3},${s*0.35} ${s*0.6},0`, fill: 'none', stroke: palette.top, 'stroke-width': 0.6 }, parent);
+    }
+  }
+
+  // 4) Debris pile near SoC
+  function drawDebris(parent, cam, center, count, spread = 2.0, seed = 13) {
+    const rng = mulberry32(seed);
+    const heap = [];
+    for (let i = 0; i < count; i++) {
+      const r = rng() * spread;
+      const ang = rng() * Math.PI * 2;
+      const x = center.x + Math.cos(ang) * r;
+      const z = center.z + Math.sin(ang) * r;
+      const y = (i % 8) * 0.04;
+      const palette = FRAG_PALETTES[Math.floor(rng() * 4)];
+      heap.push({ x, y, z, palette, rotate: (rng() - 0.5) * 60 });
+    }
+    heap.sort((a, b) => (a.x + a.z) - (b.x + b.z));
+    for (const f of heap) {
+      const w = 0.28 + rng() * 0.30;
+      const d = 0.24 + rng() * 0.28;
+      const h = 0.04 + rng() * 0.04;
+      isoCube(parent, cam, f.x, f.y, f.z, w, h, d, f.palette, f.rotate);
+    }
+  }
+
+  // 5) UNIFIZE BRICK STACK — three labeled bands, 3×3 bricks per layer
+  // Anthropic Customer-Boundary aesthetic from v3.tsx.
+  function drawUnifizeStack(parent, cam, anchor = { x: -19, y: 0, z: 11 }, opts = {}) {
+    const BRICK_W = 1.35, BRICK_H = 0.72, BRICK_D = 1.35, GAP = 0.05;
+    const GRID = 3;
+    const LAYER_GAP = 0.05;
+    const layers = [
+      { palette: UNI_BAND_C, label: 'WORKFLOW COMPONENTS' },
+      { palette: UNI_BAND_B, label: 'PRODUCT SUITE' },
+      { palette: UNI_BAND_A, label: 'OUTCOMES + AI ASSIST' },
+    ];
+    const totalH = layers.length * BRICK_H + (layers.length - 1) * LAYER_GAP;
+    layers.forEach((layer, li) => {
+      const y0 = anchor.y + li * (BRICK_H + LAYER_GAP);
+      // 3×3 bricks
+      for (let gx = 0; gx < GRID; gx++) {
+        for (let gz = 0; gz < GRID; gz++) {
+          const ox = (gx - (GRID - 1) / 2) * (BRICK_W + GAP);
+          const oz = (gz - (GRID - 1) / 2) * (BRICK_D + GAP);
+          isoCube(parent, cam, anchor.x + ox, y0, anchor.z + oz, BRICK_W, BRICK_H, BRICK_D, layer.palette);
+        }
+      }
+      // Tiny band label on the front-right edge — small mono caps
+      if (opts.labels !== false) {
+        const labelEdgeX = anchor.x + (GRID - 1) / 2 * (BRICK_W + GAP) + BRICK_W / 2 + 0.05;
+        const labelZ = anchor.z;
+        const [lx, ly] = cam(labelEdgeX, y0 + BRICK_H / 2, labelZ);
+        NS('text', { x: lx, y: ly, transform: `rotate(-30 ${lx} ${ly})`, class: 'band-label' }, parent).textContent = layer.label;
+      }
+    });
+    // Customer boundary — a dashed iso wireframe around the whole stack
+    if (opts.boundary !== false) {
+      const totalW = GRID * BRICK_W + (GRID - 1) * GAP;
+      const totalD = GRID * BRICK_D + (GRID - 1) * GAP;
+      const pad = 0.30;
+      drawIsoWireframe(parent, cam, anchor.x, anchor.y, anchor.z, totalW + pad, totalH + pad, totalD + pad);
+    }
+  }
+
+  function drawIsoWireframe(parent, cam, x, y, z, w, h, d) {
+    const hw = w / 2, hd = d / 2;
+    const C = (lx, ly, lz) => cam(x + lx, y + ly, z + lz);
+    const A = C(-hw, 0, -hd), B = C(hw, 0, -hd), Cc = C(hw, 0, hd), D = C(-hw, 0, hd);
+    const E = C(-hw, h, -hd), F = C(hw, h, -hd), G = C(hw, h, hd), H = C(-hw, h, hd);
+    const edges = [
+      [A, B], [B, Cc], [Cc, D], [D, A],
+      [E, F], [F, G], [G, H], [H, E],
+      [A, E], [B, F], [Cc, G], [D, H],
+    ];
+    for (const [p1, p2] of edges) {
+      NS('line', {
+        x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1],
+        stroke: 'rgba(125,150,255,0.40)', 'stroke-width': 0.5, 'stroke-dasharray': '3 3',
+      }, parent);
+    }
+  }
+
+  // 6) OUTCOME BILLBOARD — vertical UI panel showing audit-trail rows
+  // Drawn as an iso vertical face: a flat rectangle in world space tilted to face the camera.
+  function drawOutcomeBillboard(parent, cam, anchor = { x: -27, y: 0, z: 12 }, opts = {}) {
+    // Pedestal under the panel
+    const PED_W = 7.4, PED_H = 0.20, PED_D = 1.6;
+    isoCube(parent, cam, anchor.x, anchor.y, anchor.z, PED_W, PED_H, PED_D, UNI_BAND_C);
+
+    // The panel face: a vertical rectangle. We draw it as a quad in iso.
+    const PANEL_W = 6.6, PANEL_H = 4.2;
+    // Two world points that define the panel base: along z direction at anchor.x
+    const baseL = [anchor.x, anchor.y + PED_H, anchor.z - PANEL_W / 2 * 0.4];
+    const baseR = [anchor.x + PANEL_W * 0.85, anchor.y + PED_H, anchor.z + PANEL_W / 2 * 0.4];
+    // Panel top
+    const topL = [baseL[0], baseL[1] + PANEL_H, baseL[2]];
+    const topR = [baseR[0], baseR[1] + PANEL_H, baseR[2]];
+    const pL = cam(...baseL), pR = cam(...baseR);
+    const pTL = cam(...topL), pTR = cam(...topR);
+    // Panel face background
+    NS('polygon', { points: pts([pL, pR, pTR, pTL]), fill: '#0f1118', stroke: 'rgba(255,255,255,0.12)', 'stroke-width': 0.8 }, parent);
+
+    // Title bar
+    const titleHFrac = 0.10;
+    const titleBL = cam(baseL[0], baseL[1] + PANEL_H * (1 - titleHFrac), baseL[2]);
+    const titleBR = cam(baseR[0], baseR[1] + PANEL_H * (1 - titleHFrac), baseR[2]);
+    NS('polygon', { points: pts([titleBL, titleBR, pTR, pTL]), fill: '#15171f', stroke: 'rgba(255,255,255,0.06)', 'stroke-width': 0.5 }, parent);
+    // 3 chrome dots on title bar
+    for (let i = 0; i < 3; i++) {
+      const dot = cam(baseL[0] + (i + 1) * 0.18, baseL[1] + PANEL_H * (1 - titleHFrac / 2), baseL[2] + (i + 1) * 0.06);
+      NS('circle', { cx: dot[0], cy: dot[1], r: 1.6, fill: ['#ff5f57', '#febc2e', '#28c840'][i] }, parent);
+    }
+    // Title text
+    const titleCx = cam((baseL[0] + baseR[0]) / 2, baseL[1] + PANEL_H * (1 - titleHFrac / 2), (baseL[2] + baseR[2]) / 2);
+    NS('text', {
+      x: titleCx[0], y: titleCx[1] + 2, 'text-anchor': 'middle', class: 'billboard-meta',
+    }, parent).textContent = 'UNIFIZE · AUDIT TRAIL · TODAY';
+
+    // Eyebrow
+    const ebrowY = PANEL_H * 0.78;
+    const ebr = cam(baseL[0] + 0.3, baseL[1] + ebrowY, baseL[2] + 0.10);
+    NS('text', { x: ebr[0], y: ebr[1], class: 'billboard-eyebrow' }, parent).textContent = 'AUDIT TRAIL';
+
+    // Row table — 5 rows simulated, each is a thin bar with content
+    const rowRevealed = opts.rowsRevealed ?? 5;
+    const audit = [
+      { id: 'CR-241', title: 'Change request approved', owner: 'M. Rao', evidence: '14 items', status: 'CLOSED' },
+      { id: 'CR-240', title: 'Risk review signed off', owner: 'A. Patel', evidence: '9 items', status: 'CLOSED' },
+      { id: 'CR-238', title: 'Document revision', owner: 'J. Kim', evidence: '6 items', status: 'CLOSED' },
+      { id: 'CR-237', title: 'Audit prep complete', owner: 'L. Singh', evidence: '22 items', status: 'CLOSED' },
+      { id: 'CR-236', title: 'Investigation closed', owner: 'D. Liu', evidence: '11 items', status: 'IN REVIEW' },
+    ];
+    const rowsAreaTopY = PANEL_H * 0.66;
+    const rowsAreaBottomY = PANEL_H * 0.10;
+    const rowH = (rowsAreaTopY - rowsAreaBottomY) / 5;
+    for (let i = 0; i < Math.min(rowRevealed, audit.length); i++) {
+      const r = audit[i];
+      const yT = rowsAreaTopY - i * rowH;
+      const yB = yT - rowH * 0.9;
+      const rowTL = cam(baseL[0] + 0.20, baseL[1] + yT, baseL[2] + 0.08);
+      const rowTR = cam(baseR[0] - 0.20, baseR[1] + yT, baseR[2] - 0.08);
+      const rowBL = cam(baseL[0] + 0.20, baseL[1] + yB, baseL[2] + 0.08);
+      const rowBR = cam(baseR[0] - 0.20, baseR[1] + yB, baseR[2] - 0.08);
+      // row stripe
+      NS('polygon', { points: pts([rowBL, rowBR, rowTR, rowTL]), fill: 'rgba(255,255,255,0.025)', stroke: 'rgba(255,255,255,0.05)', 'stroke-width': 0.4 }, parent);
+      // id text
+      const idP = cam(baseL[0] + 0.45, baseL[1] + (yT + yB) / 2, baseL[2] + 0.16);
+      NS('text', { x: idP[0], y: idP[1] + 2, class: 'billboard-row', fill: '#7a9eff' }, parent).textContent = r.id;
+      // title text
+      const titleP = cam(baseL[0] + 1.40, baseL[1] + (yT + yB) / 2, baseL[2] + 0.38);
+      NS('text', { x: titleP[0], y: titleP[1] + 2, class: 'billboard-row' }, parent).textContent = r.title;
+      // status pill
+      const stP = cam(baseR[0] - 0.65, baseR[1] + (yT + yB) / 2, baseR[2] - 0.20);
+      const stColor = r.status === 'CLOSED' ? '#34d399' : '#fbbf24';
+      NS('circle', { cx: stP[0] - 16, cy: stP[1], r: 1.6, fill: stColor }, parent);
+      NS('text', { x: stP[0], y: stP[1] + 2, 'text-anchor': 'middle', class: 'billboard-row', fill: stColor }, parent).textContent = r.status;
+    }
+  }
+
+  // 7) Human silhouette
+  function human(parent, cam, x, z, height = 0.65) {
+    const head = cam(x, height, z);
+    const shoulder = cam(x, height * 0.78, z);
+    const base = cam(x, height * 0.40, z);
+    NS('circle', { cx: head[0], cy: head[1], r: 3.5, fill: '#454550', stroke: 'rgba(255,255,255,0.20)', 'stroke-width': 0.5 }, parent);
+    NS('path', {
+      d: `M${shoulder[0] - 5},${shoulder[1]} Q${shoulder[0]},${shoulder[1] - 5} ${shoulder[0] + 5},${shoulder[1]} L${base[0] + 4},${base[1]} L${base[0] - 4},${base[1]} Z`,
+      fill: '#2c2c34', stroke: 'rgba(255,255,255,0.18)', 'stroke-width': 0.5,
+    }, parent);
+  }
+
+  // Capture filaments: thin lavender lines from SoC chaos into the Unifize stack
+  function captureFilaments(parent, cam, fromCenter, toCenter, count = 6, seed = 99) {
+    const rng = mulberry32(seed);
+    for (let i = 0; i < count; i++) {
+      const sx = fromCenter.x + (rng() - 0.5) * 4;
+      const sy = 1.5 + rng() * 1.5;
+      const sz = fromCenter.z + (rng() - 0.5) * 4;
+      const tx = toCenter.x + (rng() - 0.5) * 2;
+      const ty = toCenter.y + 1.0 + rng() * 1.2;
+      const tz = toCenter.z + (rng() - 0.5) * 2;
+      const a = cam(sx, sy, sz), b = cam(tx, ty, tz);
+      const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 14];
+      NS('path', { d: `M${a[0]},${a[1]} Q${m[0]},${m[1]} ${b[0]},${b[1]}`, fill: 'none', stroke: 'rgba(183,167,232,0.55)', 'stroke-width': 0.8, 'stroke-linecap': 'round' }, parent);
+    }
+  }
+
+  // Write-back arrows: cream from Unifize to SoR records
+  function writeBackArrows(parent, cam, fromCenter, sorAnchor) {
+    const targets = [
+      { lx: -1.5, lz: -1.5 }, { lx: 1.5, lz: -1.5 },
+      { lx: 1.5, lz: 1.5 }, { lx: -1.5, lz: 1.5 },
+    ];
+    for (const t of targets) {
+      const a = cam(fromCenter.x, fromCenter.y + 0.5, fromCenter.z);
+      const b = cam(sorAnchor.x + t.lx, sorAnchor.z + 0.9, sorAnchor.z + t.lz);
+      const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 18];
+      NS('path', { d: `M${a[0]},${a[1]} Q${m[0]},${m[1]} ${b[0]},${b[1]}`, fill: 'none', stroke: 'rgba(232,216,176,0.55)', 'stroke-width': 1.0, 'stroke-linecap': 'round' }, parent);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // CAMERA TAG (bottom-right of each panel)
+  // ──────────────────────────────────────────────────────
+  function cameraTag(parent, panelW, panelH, az, el, zoom, label) {
+    const cx = panelW - 60, cy = panelH - 30;
+    const tag = NS('g', { transform: `translate(${cx}, ${cy})` }, parent);
+    const a = (Math.PI / 180) * az;
+    const e = (Math.PI / 180) * el;
+    const ca = Math.cos(a), sa = Math.sin(a);
+    const ce = Math.cos(e), se = Math.sin(e);
+    const project = (x, y, z) => {
+      const sxw = ca * x - sa * z;
+      const depth = sa * x + ca * z;
+      const syw = depth * se - y * ce;
+      return [sxw * 10, syw * 10];
+    };
+    const axes = [
+      { d: project(1, 0, 0) },
+      { d: project(0, 1, 0) },
+      { d: project(0, 0, 1) },
+    ];
+    for (const ax of axes) {
+      NS('line', { x1: 0, y1: 0, x2: ax.d[0], y2: ax.d[1], stroke: '#353540', 'stroke-width': 0.7 }, tag);
+      NS('circle', { cx: ax.d[0], cy: ax.d[1], r: 1.3, fill: '#454552' }, tag);
+    }
+    NS('text', { x: 0, y: 22, 'text-anchor': 'middle', class: 'cam-tag' }, tag).textContent = `${Math.round(az)}° / ${Math.round(el)}°`;
+    if (zoom && zoom !== 1) {
+      NS('text', { x: 0, y: 32, 'text-anchor': 'middle', class: 'cam-tag' }, tag).textContent = `×${zoom.toFixed(1)}`;
+    }
+    if (label) {
+      NS('text', { x: 0, y: -22, 'text-anchor': 'middle', class: 'cam-tag', fill: '#5a5a64' }, tag).textContent = label;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PANEL FRAME — creates a sub-svg group per panel
+  // ──────────────────────────────────────────────────────
+  // 2-column grid layout: idx 0,1 → row 0; idx 2,3 → row 1; idx 4,5 → row 2.
+  function drawPanel(parent, idx, panelW, panelH, camCfg, drawFn, label) {
+    const col = idx % 2;
+    const row = Math.floor(idx / 2);
+    const x = col * panelW;
+    const y = row * panelH;
+    const g = NS('g', { transform: `translate(${x},${y})` }, parent);
+    // Per-panel clip-path so zoomed-in scenes can't bleed into neighbouring panels
+    const clipId = `clip-${Math.random().toString(36).slice(2, 9)}`;
+    const defs = NS('defs', null, g);
+    const clip = NS('clipPath', { id: clipId }, defs);
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3 }, clip);
+    const clipped = NS('g', { 'clip-path': `url(#${clipId})` }, g);
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3, class: 'panel-frame' }, g);
+    NS('text', { x: 18, y: 22, class: 'panel-num' }, g).textContent = `0${idx + 1}`;
+    const cx = panelW / 2;
+    const cy = panelH * 0.58;
+    const scale = (camCfg.scale || 8) * (camCfg.zoom || 1);
+    const cam = makeCam({
+      az: camCfg.az,
+      el: camCfg.el,
+      scale,
+      cx,
+      cy,
+      lookX: camCfg.lookX,
+      lookY: camCfg.lookY,
+      lookZ: camCfg.lookZ,
+    });
+    drawFn(clipped, cam, camCfg);
+    cameraTag(g, panelW, panelH, camCfg.az || 32, camCfg.el || 35, camCfg.zoom || 1, label);
+    return g;
+  }
+
+  // Shared anchor points for ALL concepts (matches v3.tsx world layout)
+  const SOR_ANCHOR = { x: 8, z: -7.5 };
+  const SOC_ANCHOR = { x: -10, z: 10 };
+  const UNI_ANCHOR = { x: -19, y: 0, z: 11 };
+  const OUTCOME_ANCHOR = { x: -27, y: 0, z: 12 };
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 01 — LINEAR DOLLY LEFT (v3 baseline)
+  // Camera starts tight on the right (problem only), dollies
+  // LEFT to reveal Unifize platform, then dollies further left
+  // to reveal the outcome billboard. Pull back at the end.
+  // ══════════════════════════════════════════════════════
+  function concept01(strip, panelW, panelH) {
+    const cams = [
+      { az: 32, el: 35.264, scale: 14, lookX: 4, lookY: 3, lookZ: 1 },
+      { az: 32, el: 35.264, scale: 13, lookX: -2, lookY: 3, lookZ: 5 },
+      { az: 32, el: 35.264, scale: 11, lookX: -10, lookY: 3, lookZ: 8 },
+      { az: 32, el: 35.264, scale: 9.5, lookX: -16, lookY: 3, lookZ: 9 },
+      { az: 32, el: 35.264, scale: 8, lookX: -18, lookY: 3, lookZ: 5 },
+      { az: 32, el: 35.264, scale: 6.8, lookX: -16, lookY: 3, lookZ: 3 },
+    ];
+    const labels = ['PROBLEM TIGHT', 'DOLLY LEFT', 'UNIFIZE IN FRAME', 'OUTCOME ENTERS', 'WIDE — ALL THREE', 'FULL LANDSCAPE'];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam, 22, 22);
+        drawSoR(g, cam, SOR_ANCHOR);
+        drawSoC(g, cam, SOC_ANCHOR);
+        drawChaos(g, cam, { x: -2, z: 1 }, 18, 200);
+        drawDebris(g, cam, { x: -5, z: 6 }, 30, 1.6, 400);
+        human(g, cam, -11, 12);
+
+        if (p >= 2) drawUnifizeStack(g, cam, UNI_ANCHOR);
+        if (p >= 2) captureFilaments(g, cam, { x: -8, z: 7 }, UNI_ANCHOR, 6, 700);
+        if (p >= 3) drawOutcomeBillboard(g, cam, OUTCOME_ANCHOR, { rowsRevealed: p === 3 ? 2 : 5 });
+        if (p >= 4) writeBackArrows(g, cam, { x: -17, y: 2, z: 10 }, SOR_ANCHOR);
+        if (p >= 5) {
+          // Final state — extra humans + additional capture filaments + grown records
+          human(g, cam, -8, 9);
+          human(g, cam, -13, 13);
+          captureFilaments(g, cam, { x: -8, z: 7 }, UNI_ANCHOR, 4, 750);
+        }
+      }, labels[p]);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 02 — VERTICAL ASCENT
+  // Camera starts at ground level looking out. Tilts UP panel
+  // by panel. Floor: SoC+chaos+SoR. Middle: Unifize platform
+  // as a horizontal mezzanine slab spanning the gap. Top:
+  // outcome billboard hovering in the sky.
+  // ══════════════════════════════════════════════════════
+  function concept02(strip, panelW, panelH) {
+    const cams = [
+      { az: 32, el: 5,  scale: 12, lookX: -2, lookY: 0.5, lookZ: 1 },
+      { az: 32, el: 14, scale: 11, lookX: -2, lookY: 2.5, lookZ: 1 },
+      { az: 32, el: 24, scale: 10, lookX: -2, lookY: 4.5, lookZ: 1 },
+      { az: 32, el: 35, scale: 9,  lookX: -2, lookY: 6.5, lookZ: 1 },
+      { az: 32, el: 48, scale: 8,  lookX: -2, lookY: 9,   lookZ: 1 },
+      { az: 32, el: 65, scale: 7,  lookX: -2, lookY: 11,  lookZ: 1 },
+    ];
+    const labels = ['FLOOR-LEVEL', 'TILT UP', 'PLATFORM VISIBLE', 'MID-ASCENT', 'SKY BILLBOARD', 'NEAR-TOP-DOWN'];
+
+    // Stacked world: floor (y=0) = problem zone, y≈5 = unifize platform, y≈12 = outcome
+    const UNI_ANCHOR_2 = { x: -2, y: 5, z: 1 };
+    const OUTCOME_ANCHOR_2 = { x: -2, y: 11, z: 1 };
+
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam, 18, 18);
+        drawSoR(g, cam, SOR_ANCHOR);
+        drawSoC(g, cam, SOC_ANCHOR);
+        drawChaos(g, cam, { x: -3, z: 4 }, 16, 1100);
+        drawDebris(g, cam, { x: -5, z: 6 }, 24, 1.6, 1200);
+        human(g, cam, -10, 11);
+        // Unifize platform as a horizontal slab spanning x=-12..6 at mid-height
+        if (p >= 1) {
+          // mezzanine plinth
+          isoCube(g, cam, UNI_ANCHOR_2.x, UNI_ANCHOR_2.y - 0.18, UNI_ANCHOR_2.z, 22, 0.18, 16, UNI_BAND_C);
+          // 3 bands stacked as thin horizontal slabs on top
+          isoCube(g, cam, UNI_ANCHOR_2.x, UNI_ANCHOR_2.y + 0.0, UNI_ANCHOR_2.z, 22, 0.6, 16, UNI_BAND_C);
+          isoCube(g, cam, UNI_ANCHOR_2.x, UNI_ANCHOR_2.y + 0.65, UNI_ANCHOR_2.z, 18, 0.6, 13, UNI_BAND_B);
+          isoCube(g, cam, UNI_ANCHOR_2.x, UNI_ANCHOR_2.y + 1.30, UNI_ANCHOR_2.z, 14, 0.6, 10, UNI_BAND_A);
+          // band labels on front-right corners
+          const bandLabels = [
+            { y: UNI_ANCHOR_2.y + 0.30, text: 'WORKFLOW COMPONENTS' },
+            { y: UNI_ANCHOR_2.y + 0.95, text: 'PRODUCT SUITE' },
+            { y: UNI_ANCHOR_2.y + 1.60, text: 'OUTCOMES + AI ASSIST' },
+          ];
+          for (const bl of bandLabels) {
+            const [lx, ly] = cam(UNI_ANCHOR_2.x + 10, bl.y, UNI_ANCHOR_2.z - 7);
+            NS('text', { x: lx, y: ly, class: 'band-label' }, g).textContent = bl.text;
+          }
+        }
+        // Filaments rising from chaos up into mezzanine
+        if (p >= 1) {
+          captureFilaments(g, cam, { x: -4, z: 5 }, { x: UNI_ANCHOR_2.x, y: UNI_ANCHOR_2.y - 0.5, z: UNI_ANCHOR_2.z }, 8, 1300 + p);
+        }
+        // Outcome billboard hovers in the sky from panel 3
+        if (p >= 3) {
+          drawOutcomeBillboard(g, cam, OUTCOME_ANCHOR_2, { rowsRevealed: p === 3 ? 2 : 5 });
+        }
+      }, labels[p]);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 03 — INSIDE-OUT ZOOM
+  // P1: extreme close-up of a single audit row (text readable).
+  // P2: row sits in a panel.
+  // P3: panel is on a Unifize pedestal.
+  // P4: Unifize sits in a scene with SoR + SoC.
+  // P5: wide — see this is just one small region of a larger world.
+  // Camera position stays roughly the same; zoom is the storyteller.
+  // ══════════════════════════════════════════════════════
+  function concept03(strip, panelW, panelH) {
+    const cams = [
+      { az: 32, el: 35.264, scale: 120, lookX: -24, lookY: 2.4, lookZ: 12 },
+      { az: 32, el: 35.264, scale: 42,  lookX: -24, lookY: 2.4, lookZ: 12 },
+      { az: 32, el: 35.264, scale: 22,  lookX: -23, lookY: 2.4, lookZ: 11.5 },
+      { az: 32, el: 35.264, scale: 14,  lookX: -19, lookY: 3, lookZ: 10 },
+      { az: 32, el: 35.264, scale: 10,  lookX: -12, lookY: 3, lookZ: 6 },
+      { az: 32, el: 35.264, scale: 6.5, lookX: -6,  lookY: 3, lookZ: 2 },
+    ];
+    const labels = ['ROW ZOOM ×120', 'BILLBOARD ×42', 'PEDESTAL ×22', 'UNIFIZE ×14', 'PROBLEM ENTERS', 'FULL LANDSCAPE'];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        if (p >= 2) isoFloor(g, cam, 24, 20);
+        if (p >= 4) {
+          drawSoR(g, cam, SOR_ANCHOR);
+          drawSoC(g, cam, SOC_ANCHOR);
+          drawChaos(g, cam, { x: -3, z: 4 }, p >= 5 ? 18 : 12, 1700);
+          drawDebris(g, cam, { x: -5, z: 6 }, p >= 5 ? 30 : 20, 1.6, 1800);
+        }
+        if (p >= 2) drawUnifizeStack(g, cam, UNI_ANCHOR);
+        if (p >= 4) captureFilaments(g, cam, { x: -8, z: 8 }, UNI_ANCHOR, 6, 1900);
+        drawOutcomeBillboard(g, cam, OUTCOME_ANCHOR, { rowsRevealed: 5 });
+        if (p === 0) {
+          const c1 = cam(OUTCOME_ANCHOR.x + 0.20, OUTCOME_ANCHOR.y + 4.0 * 0.66 + 0.20, OUTCOME_ANCHOR.z - 6.6 / 2 * 0.4 + 0.08);
+          const c2 = cam(OUTCOME_ANCHOR.x + 6.6 * 0.85 - 0.20, OUTCOME_ANCHOR.y + 4.0 * 0.66 + 0.20 - 0.65, OUTCOME_ANCHOR.z + 6.6 / 2 * 0.4 - 0.08);
+          NS('rect', {
+            x: Math.min(c1[0], c2[0]) - 6, y: Math.min(c1[1], c2[1]) - 6,
+            width: Math.abs(c2[0] - c1[0]) + 12, height: Math.abs(c2[1] - c1[1]) + 12,
+            fill: 'none', stroke: '#4078ff', 'stroke-width': 1.4, 'stroke-dasharray': '5 3',
+          }, g);
+        }
+        if (p === 5) {
+          human(g, cam, -10, 12);
+          human(g, cam, -7, 9);
+          writeBackArrows(g, cam, { x: -17, y: 2, z: 10 }, SOR_ANCHOR);
+        }
+      }, labels[p]);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 04 — TRACKING THE WORK
+  // Camera follows ONE atom of work through the world.
+  // P1: birth in SoC (close on Teams tile).
+  // P2: drift across chaos.
+  // P3: enter Unifize stack.
+  // P4: emerge as audit row on outcome billboard.
+  // P5: write-back to SoR record (close on the receiving record).
+  // ══════════════════════════════════════════════════════
+  function concept04(strip, panelW, panelH) {
+    const cams = [
+      { az: 32, el: 35.264, scale: 36, lookX: -10, lookY: 1.5, lookZ: 9 },
+      { az: 32, el: 35.264, scale: 22, lookX: -11.5, lookY: 2.2, lookZ: 9 },
+      { az: 32, el: 35.264, scale: 18, lookX: -14, lookY: 2.6, lookZ: 9 },
+      { az: 32, el: 35.264, scale: 24, lookX: -19, lookY: 2.5, lookZ: 11 },
+      { az: 32, el: 35.264, scale: 28, lookX: -25, lookY: 2.5, lookZ: 12 },
+      { az: 32, el: 35.264, scale: 28, lookX: 8, lookY: 1.2, lookZ: -7.5 },
+    ];
+    const labels = ['BIRTH IN SoC', 'LIFT-OFF', 'CROSSING GAP', 'INSIDE UNIFIZE', 'OUTCOME ROW', 'WRITTEN BACK'];
+    const TRAJECTORY = [
+      [-10, 1.4, 9.5],
+      [-11.5, 2.2, 9.5],
+      [-14, 2.7, 9.5],
+      [-19, 2.7, 11],
+      [-24, 3.5, 12],
+      [8, 1.4, -7.5],
+    ];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam, 24, 20);
+        // World always present (camera moves through it)
+        drawSoR(g, cam, SOR_ANCHOR);
+        drawSoC(g, cam, SOC_ANCHOR);
+        drawChaos(g, cam, { x: -3, z: 4 }, 16, 2200);
+        drawDebris(g, cam, { x: -5, z: 6 }, 22, 1.6, 2300);
+        drawUnifizeStack(g, cam, UNI_ANCHOR);
+        drawOutcomeBillboard(g, cam, OUTCOME_ANCHOR, { rowsRevealed: p >= 3 ? 5 : 3 });
+        captureFilaments(g, cam, { x: -8, z: 8 }, UNI_ANCHOR, 5, 2400);
+        if (p >= 4) writeBackArrows(g, cam, { x: -17, y: 2, z: 10 }, SOR_ANCHOR);
+
+        // Tracked atom — highlighted (large, ringed, color = approval yellow)
+        const a = TRAJECTORY[p];
+        const [ax, ay] = cam(a[0], a[1], a[2]);
+        // glow
+        NS('circle', { cx: ax, cy: ay, r: 16, fill: 'rgba(240,200,74,0.18)', stroke: 'rgba(240,200,74,0.45)', 'stroke-width': 0.7 }, g);
+        atom(g, cam, a[0], a[1], a[2], 'env', FRAG_PALETTES[0]);
+        // dashed trajectory trail (so the journey is legible)
+        if (p >= 1) {
+          const prev = TRAJECTORY[p - 1];
+          const ps = cam(prev[0], prev[1], prev[2]);
+          NS('path', {
+            d: `M${ps[0]},${ps[1]} L${ax},${ay}`,
+            fill: 'none', stroke: 'rgba(240,200,74,0.6)', 'stroke-width': 0.9, 'stroke-dasharray': '4 3',
+          }, g);
+        }
+        human(g, cam, -10, 12);
+      }, labels[p]);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 05 — CROSS-SECTION SIDE → ISO
+  // Elevation tilts from 0° to ~35° across the strip. P1 is a
+  // pure side view (the world's vertical strata are visible).
+  // P5 is full iso depth.
+  // ══════════════════════════════════════════════════════
+  function concept05(strip, panelW, panelH) {
+    const cams = [
+      { az: 32, el: 0,    scale: 12, lookX: -8, lookY: 3, lookZ: 5 },
+      { az: 32, el: 7,    scale: 12, lookX: -8, lookY: 3, lookZ: 5 },
+      { az: 32, el: 15,   scale: 12, lookX: -8, lookY: 3, lookZ: 5 },
+      { az: 32, el: 22,   scale: 12, lookX: -8, lookY: 3, lookZ: 5 },
+      { az: 32, el: 30,   scale: 12, lookX: -8, lookY: 3, lookZ: 5 },
+      { az: 32, el: 35.264, scale: 12, lookX: -8, lookY: 3, lookZ: 5 },
+    ];
+    const labels = ['SIDE EL 0°', 'EL 7°', 'EL 15°', 'EL 22°', 'EL 30°', 'FULL ISO 35°'];
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        if (p > 0) isoFloor(g, cam, 24, 20);
+        drawSoR(g, cam, SOR_ANCHOR);
+        drawSoC(g, cam, SOC_ANCHOR);
+        drawChaos(g, cam, { x: -3, z: 4 }, 14, 2700);
+        drawDebris(g, cam, { x: -5, z: 6 }, 22, 1.6, 2800);
+        drawUnifizeStack(g, cam, UNI_ANCHOR);
+        drawOutcomeBillboard(g, cam, OUTCOME_ANCHOR, { rowsRevealed: 5 });
+        captureFilaments(g, cam, { x: -8, z: 8 }, UNI_ANCHOR, 6, 2900);
+        writeBackArrows(g, cam, { x: -17, y: 2, z: 10 }, SOR_ANCHOR);
+        human(g, cam, -10, 12);
+      }, labels[p]);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════
+  // CONCEPT 06 — CONCENTRIC ORBIT
+  // Unifize at CENTER (not to the left). SoR records arrayed in
+  // a ring around it. SoC + chaos in one cardinal direction.
+  // Outcome billboard tangent to the ring. Camera orbits 0→180°.
+  // ══════════════════════════════════════════════════════
+  function concept06(strip, panelW, panelH) {
+    const cams = [
+      { az: 0,   el: 35.264, scale: 11, lookX: 0, lookY: 2, lookZ: 0 },
+      { az: 36,  el: 35.264, scale: 11, lookX: 0, lookY: 2, lookZ: 0 },
+      { az: 72,  el: 35.264, scale: 11, lookX: 0, lookY: 2, lookZ: 0 },
+      { az: 108, el: 35.264, scale: 11, lookX: 0, lookY: 2, lookZ: 0 },
+      { az: 144, el: 35.264, scale: 11, lookX: 0, lookY: 2, lookZ: 0 },
+      { az: 180, el: 35.264, scale: 11, lookX: 0, lookY: 2, lookZ: 0 },
+    ];
+    const labels = ['AZ 0°', 'AZ 36°', 'AZ 72°', 'AZ 108°', 'AZ 144°', 'AZ 180°'];
+
+    // Concentric layout: Unifize at origin
+    const UNI_C6 = { x: 0, y: 0, z: 0 };
+    // SoR records in a ring at radius 8
+    const ringRecords = [];
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2;
+      ringRecords.push({ x: Math.cos(ang) * 8, z: Math.sin(ang) * 8, label: ['QMS', 'DMS', 'ERP', 'PLM', 'MES', 'LIMS'][i] });
+    }
+    // SoC zone at one direction (say +z, the "front" of ring)
+    const SoC_C6 = { x: 0, z: 13 };
+    // Outcome billboard at -x direction
+    const OUTCOME_C6 = { x: -14, y: 0, z: 0 };
+
+    cams.forEach((cfg, p) => {
+      drawPanel(strip, p, panelW, panelH, cfg, (g, cam) => {
+        isoFloor(g, cam, 20, 20);
+
+        // Ring records
+        for (const r of ringRecords) {
+          isoCube(g, cam, r.x, 0, r.z, 1.6, 0.9, 1.6, SoR);
+          const [lx, ly] = cam(r.x, 0.92, r.z);
+          NS('text', { x: lx, y: ly + 1, 'text-anchor': 'middle', class: 'record-label' }, g).textContent = r.label;
+        }
+
+        // SoC at +z direction
+        drawSoC(g, cam, SoC_C6);
+        drawChaos(g, cam, { x: 0, z: 12 }, 16, 3000);
+        drawDebris(g, cam, { x: 0, z: 11 }, 22, 1.6, 3100);
+        human(g, cam, 0, 14);
+
+        // Unifize brick stack at center
+        drawUnifizeStack(g, cam, UNI_C6);
+        // capture filaments from SoC into Unifize
+        captureFilaments(g, cam, { x: 0, z: 11 }, UNI_C6, 7, 3200);
+
+        // Outcome billboard at -x (only visible when az allows it)
+        drawOutcomeBillboard(g, cam, OUTCOME_C6, { rowsRevealed: 5 });
+
+        // Write-back arrows from Unifize to all ring records
+        for (const r of ringRecords) {
+          const a = cam(0, 1.5, 0), b = cam(r.x, 0.9, r.z);
+          const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 12];
+          NS('path', { d: `M${a[0]},${a[1]} Q${m[0]},${m[1]} ${b[0]},${b[1]}`, fill: 'none', stroke: 'rgba(232,216,176,0.30)', 'stroke-width': 0.7 }, g);
+        }
+      }, labels[p]);
+    });
+  }
+
+  // ──────────────────────────────────────────────────────
+  // RENDER
+  // ──────────────────────────────────────────────────────
+  const concepts = [
+    { id: 'c01', title: 'LINEAR DOLLY LEFT  ·  PROBLEM → UNIFIZE → OUTCOME', fn: concept01 },
+    { id: 'c02', title: 'VERTICAL ASCENT  ·  FLOOR → MEZZANINE → SKY',     fn: concept02 },
+    { id: 'c03', title: 'INSIDE-OUT ZOOM  ·  ROW → BILLBOARD → LANDSCAPE', fn: concept03 },
+    { id: 'c04', title: 'TRACKING THE WORK  ·  SoC → UNIFIZE → OUTCOME → SoR', fn: concept04 },
+    { id: 'c05', title: 'CROSS-SECTION → ISO  ·  EL 0° → EL 35°',           fn: concept05 },
+    { id: 'c06', title: 'CONCENTRIC ORBIT  ·  UNIFIZE AT CENTER',           fn: concept06 },
+  ];
+
+  const main = document.getElementById('main');
+  const toc = document.getElementById('toc');
+  concepts.forEach((c, idx) => {
+    const a = document.createElement('a');
+    a.href = `#${c.id}`;
+    a.textContent = `${String(idx + 1).padStart(2, '0')} ${c.title.split('  ·  ')[0]}`;
+    toc.appendChild(a);
+
+    const section = document.createElement('section');
+    section.className = 'concept';
+    section.id = c.id;
+
+    const h = document.createElement('div');
+    h.className = 'title';
+    h.innerHTML = `<span class="num">${String(idx + 1).padStart(2, '0')}</span>${c.title}`;
+    section.appendChild(h);
+
+    const stripDiv = document.createElement('div');
+    stripDiv.className = 'strip';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const COLS = 2;
+    const ROWS = 3;
+    const panelW = 640;
+    const panelH = 480;
+    svg.setAttribute('viewBox', `0 0 ${COLS * panelW} ${ROWS * panelH}`);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    c.fn(svg, panelW, panelH);
+    stripDiv.appendChild(svg);
+    section.appendChild(stripDiv);
+    main.appendChild(section);
+  });
+})();
+</script>
+</body>
+</html>

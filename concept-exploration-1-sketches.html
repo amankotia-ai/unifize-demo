@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Concept Exploration 1 — Process Visual Language Sketches</title>
+<style>
+  :root {
+    --bg: #08090d;
+    --ink: #d8d8e0;
+    --hint: #4a4a52;
+    --line: rgba(255,255,255,0.07);
+    --panel-line: rgba(255,255,255,0.05);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.head {
+    position: sticky; top: 0; z-index: 10;
+    padding: 12px 28px 10px;
+    font-size: 10.5px; letter-spacing: 0.1em;
+    background: rgba(8,9,13,0.92);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  header.head .tag { color: #6e6e78; }
+  header.head .toc { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 6px; }
+  header.head .toc a { color: #50505a; text-decoration: none; transition: color 0.15s; }
+  header.head .toc a:hover { color: var(--ink); }
+  section.concept {
+    min-height: 100vh; height: 100vh;
+    padding: 12vh 4vw 6vh;
+    display: flex; flex-direction: column;
+    border-bottom: 1px solid var(--line);
+  }
+  .title {
+    font-size: 10.5px; letter-spacing: 0.22em;
+    color: #7a7a82;
+    margin: 0 0 1vh;
+    text-transform: uppercase;
+  }
+  .title .num { color: #3a3a42; margin-right: 18px; }
+  .strip {
+    flex: 1; min-height: 0;
+    width: 100%; height: 68vh; max-height: 68vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .strip svg { width: 100%; height: 100%; display: block; }
+  .panel-frame { stroke: var(--panel-line); fill: none; stroke-width: 0.6; }
+  .panel-num { fill: #2c2c34; font-size: 11px; letter-spacing: 0.12em; font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div><span class="tag">CONCEPT EXPLORATION 1 / SCROLL 4 / ROOT CAUSE — SoR · GAP · SoC · NO UNIFIZE YET</span></div>
+  <div class="toc" id="toc"></div>
+</header>
+
+<main id="main"></main>
+
+<script>
+(() => {
+  // ──────────────────────────────────────────────────────
+  // ISO PROJECTION (pure 30° iso, camera at +x, +z, -y)
+  // World axes: x = right-back, y = up, z = right-front
+  // ──────────────────────────────────────────────────────
+  const COS30 = Math.cos(Math.PI / 6); // 0.8660
+  const SIN30 = 0.5;
+
+  function proj(x, y, z, cx, cy, s) {
+    return [
+      cx + (x - z) * COS30 * s,
+      cy - (x + z) * SIN30 * s - y * s,
+    ];
+  }
+
+  const NS = (name, attrs, parent) => {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', name);
+    if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  const pts = (arr) => arr.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
+
+  // ──────────────────────────────────────────────────────
+  // PALETTES — flat low-fi, no labels, no Unifize blue
+  // ──────────────────────────────────────────────────────
+  const SoR = { top: '#3D4049', right: '#1C1E25', front: '#2A2D35', stroke: 'rgba(255,255,255,0.20)' };
+  const SoC = { top: '#262830', right: '#0F1116', front: '#1B1D24', stroke: 'rgba(255,255,255,0.20)' };
+  const SHARD = { top: '#C8B98F', right: '#7A6A48', front: '#9D8B60', stroke: 'rgba(120,90,40,0.45)' };
+  const SHARD_DIM = { top: '#857958', right: '#4D4530', front: '#675C40', stroke: 'rgba(80,60,30,0.45)' };
+  const SHARD_DARK = { top: '#5C5340', right: '#2E2A1E', front: '#403A2C', stroke: 'rgba(60,45,20,0.50)' };
+  const VOID_HATCH = 'rgba(255,255,255,0.06)';
+  const FLOOR_GRID = 'rgba(255,255,255,0.045)';
+
+  // ──────────────────────────────────────────────────────
+  // PRIMITIVES
+  // ──────────────────────────────────────────────────────
+  function isoCube(parent, x, y, z, w, h, d, palette, cx, cy, s, rotate = 0) {
+    const hw = w / 2, hd = d / 2;
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const rot = (lx, lz) => [x + lx * cosR - lz * sinR, z + lx * sinR + lz * cosR];
+    const C = (lx, ly, lz) => {
+      const [wx, wz] = rot(lx, lz);
+      return proj(wx, y + ly, wz, cx, cy, s);
+    };
+    const A = C(-hw, 0, -hd);  // back-left bottom
+    const B = C(hw, 0, -hd);   // back-right bottom
+    const D = C(hw, 0, hd);    // front-right bottom
+    const E = C(-hw, 0, hd);   // front-left bottom
+    const F = C(-hw, h, -hd);  // back-left top
+    const G = C(hw, h, -hd);   // back-right top
+    const H = C(hw, h, hd);    // front-right top
+    const I = C(-hw, h, hd);   // front-left top
+    // top face
+    NS('polygon', { points: pts([F, G, H, I]), fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    // front face (z+)
+    NS('polygon', { points: pts([E, D, H, I]), fill: palette.front, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+    // right face (x+)
+    NS('polygon', { points: pts([D, B, G, H]), fill: palette.right, stroke: palette.stroke, 'stroke-width': 0.7, 'stroke-linejoin': 'round' }, parent);
+  }
+
+  // Flat tile (low cuboid, h ≈ 0.1)
+  function isoTile(parent, x, z, w, d, palette, cx, cy, s, h = 0.08, y = 0) {
+    isoCube(parent, x, y, z, w, h, d, palette, cx, cy, s);
+  }
+
+  // Small scrap of paper at world (x,0,z), tiny size
+  function isoScrap(parent, x, z, cx, cy, s, palette = SHARD, w, d, h, rotate = 0) {
+    w = w || (0.20 + Math.random() * 0.35);
+    d = d || (0.18 + Math.random() * 0.30);
+    h = h || (0.03 + Math.random() * 0.04);
+    isoCube(parent, x, 0, z, w, h, d, palette, cx, cy, s, rotate);
+  }
+
+  // Iso floor grid (light)
+  function isoFloor(parent, cx, cy, s, half = 5, div = 10) {
+    const g = NS('g', { opacity: 0.6 }, parent);
+    const step = (half * 2) / div;
+    for (let i = 0; i <= div; i++) {
+      const t = -half + i * step;
+      const [ax, ay] = proj(-half, 0, t, cx, cy, s);
+      const [bx, by] = proj(half, 0, t, cx, cy, s);
+      NS('line', { x1: ax, y1: ay, x2: bx, y2: by, stroke: FLOOR_GRID, 'stroke-width': 0.4 }, g);
+      const [cx2, cy2] = proj(t, 0, -half, cx, cy, s);
+      const [dx, dy] = proj(t, 0, half, cx, cy, s);
+      NS('line', { x1: cx2, y1: cy2, x2: dx, y2: dy, stroke: FLOOR_GRID, 'stroke-width': 0.4 }, g);
+    }
+  }
+
+  // Hatched void on the floor between SoR and SoC
+  function isoVoidHatch(parent, x0, z0, x1, z1, cx, cy, s, density = 14) {
+    const P = (u, w) => proj(u, 0, w, cx, cy, s);
+    const TL = P(x0, z0), TR = P(x1, z0), BR = P(x1, z1), BL = P(x0, z1);
+    const clipId = 'clip-' + Math.random().toString(36).slice(2, 8);
+    const defs = NS('defs', null, parent);
+    const clip = NS('clipPath', { id: clipId }, defs);
+    NS('polygon', { points: pts([TL, TR, BR, BL]) }, clip);
+    const g = NS('g', { 'clip-path': `url(#${clipId})` }, parent);
+    NS('polygon', { points: pts([TL, TR, BR, BL]), fill: 'rgba(0,0,0,0.45)' }, g);
+    // diagonal hatch lines
+    const minX = Math.min(TL[0], TR[0], BR[0], BL[0]);
+    const maxX = Math.max(TL[0], TR[0], BR[0], BL[0]);
+    const minY = Math.min(TL[1], TR[1], BR[1], BL[1]);
+    const maxY = Math.max(TL[1], TR[1], BR[1], BL[1]);
+    const W = maxX - minX, H = maxY - minY;
+    const stepPx = (W + H) / density;
+    for (let i = -density; i <= density * 2; i++) {
+      const off = i * stepPx;
+      NS('line', {
+        x1: minX + off, y1: minY,
+        x2: minX + off - H, y2: minY + H,
+        stroke: VOID_HATCH, 'stroke-width': 0.7,
+      }, g);
+    }
+  }
+
+  // Tiny "atom" floating in air at (x,y,z) — chat-bubble, envelope, calendar dot
+  function isoAtom(parent, x, y, z, kind, cx, cy, s, palette = SHARD) {
+    const [px, py] = proj(x, y, z, cx, cy, s);
+    if (kind === 'env') {
+      const w = s * 0.32, h = s * 0.20;
+      NS('rect', { x: px - w / 2, y: py - h / 2, width: w, height: h, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+      NS('polyline', { points: `${px - w/2},${py - h/2} ${px},${py + h/4} ${px + w/2},${py - h/2}`, fill: 'none', stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+    } else if (kind === 'chat') {
+      const w = s * 0.34, h = s * 0.22;
+      NS('rect', { x: px - w / 2, y: py - h / 2, width: w, height: h, rx: 2, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+      NS('polygon', { points: `${px - w/4 + 1},${py + h/2} ${px - w/4 - 3},${py + h/2 + 5} ${px - w/4 + 5},${py + h/2}`, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+    } else if (kind === 'doc') {
+      const w = s * 0.22, h = s * 0.30;
+      NS('rect', { x: px - w / 2, y: py - h / 2, width: w, height: h, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+      for (let i = 1; i <= 3; i++) {
+        const ly = py - h / 2 + (i * h / 4);
+        NS('line', { x1: px - w / 2 + 2, y1: ly, x2: px + w / 2 - 2, y2: ly, stroke: palette.stroke, 'stroke-width': 0.4 }, parent);
+      }
+    } else if (kind === 'cal') {
+      const w = s * 0.24, h = s * 0.24;
+      NS('rect', { x: px - w / 2, y: py - h / 2, width: w, height: h, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.6 }, parent);
+      for (let i = 1; i < 3; i++) {
+        NS('line', { x1: px - w / 2 + (i * w / 3), y1: py - h / 2 + 2, x2: px - w / 2 + (i * w / 3), y2: py + h / 2 - 2, stroke: palette.stroke, 'stroke-width': 0.4 }, parent);
+        NS('line', { x1: px - w / 2 + 2, y1: py - h / 2 + (i * h / 3), x2: px + w / 2 - 2, y2: py - h / 2 + (i * h / 3), stroke: palette.stroke, 'stroke-width': 0.4 }, parent);
+      }
+    } else if (kind === 'dot') {
+      NS('circle', { cx: px, cy: py, r: 2.5, fill: palette.top, stroke: palette.stroke, 'stroke-width': 0.5 }, parent);
+    } else if (kind === 'call') {
+      const r = s * 0.10;
+      NS('circle', { cx: px, cy: py, r, fill: 'none', stroke: palette.stroke, 'stroke-width': 1 }, parent);
+      NS('path', { d: `M${px - r/2},${py - r/3} q${r/2},${r/2} ${r},0`, fill: 'none', stroke: palette.top, 'stroke-width': 0.9 }, parent);
+    } else if (kind === 'at') {
+      const r = s * 0.10;
+      NS('circle', { cx: px, cy: py, r, fill: 'none', stroke: palette.stroke, 'stroke-width': 0.8 }, parent);
+      NS('circle', { cx: px, cy: py, r: r * 0.5, fill: 'none', stroke: palette.top, 'stroke-width': 0.7 }, parent);
+    }
+  }
+
+  // SoR cluster: row of 4-5 small graphite cubes (records)
+  function drawSoR(parent, cx, cy, s, anchor = { x: 4.5, z: -3 }, n = 5, palette = SoR) {
+    const w = 1.1, h = 0.9, d = 1.1, gap = 0.25;
+    const total = n * w + (n - 1) * gap;
+    for (let i = 0; i < n; i++) {
+      const x = anchor.x + (i * (w + gap)) - total / 2 + w / 2;
+      isoCube(parent, x, 0, anchor.z, w, h, d, palette, cx, cy, s);
+      // 4-dot glyph on top — kept tiny so it reads as "system" not as "label"
+      const [gx, gy] = proj(x, h + 0.02, anchor.z, cx, cy, s);
+      const dotSize = s * 0.07;
+      for (let dx = 0; dx < 2; dx++) for (let dy = 0; dy < 2; dy++) {
+        NS('rect', {
+          x: gx - dotSize * 1.4 + dx * dotSize * 1.4,
+          y: gy - dotSize * 1.4 + dy * dotSize * 1.4,
+          width: dotSize, height: dotSize,
+          fill: 'rgba(255,255,255,0.35)',
+        }, parent);
+      }
+    }
+  }
+
+  // SoC cluster: layered tile-stack (channels) on left
+  function drawSoC(parent, cx, cy, s, anchor = { x: -3, z: 3.5 }, palette = SoC) {
+    // Base plinth
+    isoCube(parent, anchor.x, 0, anchor.z, 3.4, 0.25, 3.4, palette, cx, cy, s);
+    // 3×3 tile grid on top
+    const cellW = 1.0, cellGap = 0.06;
+    for (let gx = -1; gx <= 1; gx++) {
+      for (let gz = -1; gz <= 1; gz++) {
+        const x = anchor.x + gx * (cellW + cellGap);
+        const z = anchor.z + gz * (cellW + cellGap);
+        isoCube(parent, x, 0.25, z, cellW, 0.18, cellW, palette, cx, cy, s);
+      }
+    }
+  }
+
+  // Tiny human silhouette in iso (just a head + shoulders, near SoC)
+  function isoHuman(parent, x, z, cx, cy, s, scale = 0.35) {
+    const [px, py] = proj(x, scale * 1.2, z, cx, cy, s);
+    NS('circle', { cx: px, cy: py - s * scale * 0.45, r: s * scale * 0.13, fill: '#3a3a44', stroke: 'rgba(255,255,255,0.18)', 'stroke-width': 0.4 }, parent);
+    NS('path', {
+      d: `M${px - s*scale*0.18},${py + s*scale*0.05} q${s*scale*0.18},${-s*scale*0.30} ${s*scale*0.36},0 L${px + s*scale*0.18},${py + s*scale*0.30} L${px - s*scale*0.18},${py + s*scale*0.30} Z`,
+      fill: '#2c2c34', stroke: 'rgba(255,255,255,0.18)', 'stroke-width': 0.4,
+    }, parent);
+  }
+
+  // ──────────────────────────────────────────────────────
+  // PANEL FRAME — each comic panel
+  // ──────────────────────────────────────────────────────
+  function drawPanel(parent, idx, totalPanels, panelW, panelH, drawFn) {
+    const x = idx * panelW;
+    const g = NS('g', { transform: `translate(${x},0)` }, parent);
+    // subtle panel frame
+    NS('rect', { x: 6, y: 6, width: panelW - 12, height: panelH - 12, rx: 3, class: 'panel-frame' }, g);
+    // small index label
+    NS('text', {
+      x: 18, y: 22,
+      class: 'panel-num',
+    }, g).textContent = `0${idx + 1}`;
+    // iso content — scale calibrated so SoR/SoC clusters + floor fit inside panel
+    const cx = panelW / 2;
+    const cy = panelH * 0.60;
+    const s = Math.min(panelW * 0.045, panelH * 0.050);
+    drawFn(g, cx, cy, s);
+    return g;
+  }
+
+  // ──────────────────────────────────────────────────────
+  // SEEDED RANDOM (so each render is identical)
+  // ──────────────────────────────────────────────────────
+  function mulberry32(seed) {
+    let t = seed;
+    return function () {
+      t = (t + 0x6D2B79F5) >>> 0;
+      let x = t;
+      x = Math.imul(x ^ (x >>> 15), x | 1);
+      x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ──────────────────────────────────────────────────────
+  // CONCEPT 01 — THE PILE-UP
+  //   The visible accumulation of lost coordination work
+  //   between two equal stacks. Pile grows panel by panel.
+  // ──────────────────────────────────────────────────────
+  function concept01(strip, panelW, panelH) {
+    const panels = 5;
+    const PALETTES = [SHARD, SHARD_DIM, SHARD_DARK];
+    for (let p = 0; p < panels; p++) {
+      drawPanel(strip, p, panels, panelW, panelH, (g, cx, cy, s) => {
+        isoFloor(g, cx, cy, s);
+        drawSoR(g, cx, cy, s);
+        drawSoC(g, cx, cy, s);
+        // Pile in middle: grows with p
+        const rng = mulberry32(101 + p);
+        const fragmentCount = [0, 5, 14, 28, 50][p];
+        const heap = [];
+        for (let i = 0; i < fragmentCount; i++) {
+          const t = i / Math.max(1, fragmentCount - 1);
+          // cluster near origin, slight spread
+          const r = rng() * 1.8;
+          const ang = rng() * Math.PI * 2;
+          const x = Math.cos(ang) * r * 0.7;
+          const z = Math.sin(ang) * r * 0.7;
+          const y = (i % 7) * 0.06; // stack upward
+          const palette = PALETTES[Math.floor(rng() * 3)];
+          heap.push({ x, y, z, palette, rotate: (rng() - 0.5) * 60 });
+        }
+        // sort back-to-front
+        heap.sort((a, b) => (a.x + a.z) - (b.x + b.z));
+        for (const f of heap) {
+          const w = 0.30 + rng() * 0.35;
+          const d = 0.28 + rng() * 0.30;
+          const h = 0.04 + rng() * 0.05;
+          isoCube(g, f.x, f.y, f.z, w, h, d, f.palette, cx, cy, s, f.rotate);
+        }
+        // a few atoms in the air above SoC (active coordination)
+        if (p >= 1) {
+          const atomCount = [0, 4, 6, 7, 8][p];
+          const arng = mulberry32(201 + p);
+          const kinds = ['env', 'chat', 'doc', 'cal', 'at'];
+          for (let i = 0; i < atomCount; i++) {
+            const x = -3 + (arng() - 0.5) * 3.5;
+            const y = 1.0 + arng() * 1.2;
+            const z = 3.5 + (arng() - 0.5) * 3.5;
+            isoAtom(g, x, y, z, kinds[Math.floor(arng() * kinds.length)], cx, cy, s);
+          }
+        }
+      });
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // CONCEPT 02 — ORBITAL DRIFT
+  //   Coordination work orbits SoC. Few satellites reach
+  //   SoR; most break orbit and fall to the gap floor.
+  // ──────────────────────────────────────────────────────
+  function concept02(strip, panelW, panelH) {
+    const panels = 5;
+    for (let p = 0; p < panels; p++) {
+      drawPanel(strip, p, panels, panelW, panelH, (g, cx, cy, s) => {
+        isoFloor(g, cx, cy, s);
+        drawSoR(g, cx, cy, s);
+        drawSoC(g, cx, cy, s);
+
+        const rng = mulberry32(301 + p);
+        // orbit rings around SoC (centred at -3, 3.5)
+        const cx0 = -3, cz0 = 3.5;
+        const orbitRings = [0, 1, 2, 3, 3][p];
+        for (let r = 0; r < orbitRings; r++) {
+          const radius = 1.6 + r * 0.6;
+          const steps = 36;
+          const ringPts = [];
+          for (let i = 0; i <= steps; i++) {
+            const ang = (i / steps) * Math.PI * 2;
+            const x = cx0 + Math.cos(ang) * radius;
+            const z = cz0 + Math.sin(ang) * radius;
+            const y = 1.6 + r * 0.25;
+            ringPts.push(proj(x, y, z, cx, cy, s));
+          }
+          const path = 'M' + ringPts.map(pt => pt.join(',')).join(' L');
+          NS('path', { d: path, fill: 'none', stroke: 'rgba(200,185,143,0.18)', 'stroke-width': 0.8, 'stroke-dasharray': '3 4' }, g);
+
+          // satellites on this ring
+          const satCount = [0, 3, 5, 7, 9][p];
+          const arng = mulberry32(401 + p * 10 + r);
+          const kinds = ['env', 'chat', 'doc', 'cal', 'at', 'call'];
+          for (let i = 0; i < satCount; i++) {
+            const ang = arng() * Math.PI * 2;
+            const x = cx0 + Math.cos(ang) * radius;
+            const z = cz0 + Math.sin(ang) * radius;
+            const y = 1.6 + r * 0.25 + (arng() - 0.5) * 0.2;
+            isoAtom(g, x, y, z, kinds[Math.floor(arng() * kinds.length)], cx, cy, s);
+          }
+        }
+        // satellites breaking away — falling fragments on gap floor
+        if (p >= 2) {
+          const fallCount = [0, 0, 6, 14, 22][p];
+          const frng = mulberry32(501 + p);
+          for (let i = 0; i < fallCount; i++) {
+            const x = (frng() - 0.5) * 4;
+            const z = (frng() - 0.5) * 4;
+            const palette = [SHARD, SHARD_DIM, SHARD_DARK][Math.floor(frng() * 3)];
+            isoScrap(g, x, z, cx, cy, s, palette, undefined, undefined, undefined, (frng() - 0.5) * 60);
+          }
+        }
+        // tiny trickle reaching SoR (only 1-2 thin lines)
+        if (p >= 3) {
+          const lines = [0, 0, 0, 1, 2][p];
+          for (let i = 0; i < lines; i++) {
+            const startY = 1.8;
+            const start = proj(cx0 + 1.0 + i * 0.3, startY, cz0 - 0.5, cx, cy, s);
+            const end = proj(4.5 + (i - 0.5) * 1.5, 1.0, -3, cx, cy, s);
+            const mid = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2 - 30];
+            NS('path', {
+              d: `M${start[0]},${start[1]} Q${mid[0]},${mid[1]} ${end[0]},${end[1]}`,
+              fill: 'none', stroke: 'rgba(200,185,143,0.35)', 'stroke-width': 0.9,
+            }, g);
+          }
+        }
+      });
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // CONCEPT 03 — SEVERED CONVEYORS
+  //   Two factory bays with conveyor stubs that don't meet.
+  //   Items mid-flight drop into the gap.
+  // ──────────────────────────────────────────────────────
+  function concept03(strip, panelW, panelH) {
+    const panels = 5;
+    for (let p = 0; p < panels; p++) {
+      drawPanel(strip, p, panels, panelW, panelH, (g, cx, cy, s) => {
+        isoFloor(g, cx, cy, s);
+        // SoC bay (left)
+        isoCube(g, -3, 0, 3.5, 3.6, 0.35, 3.6, SoC, cx, cy, s);
+        // SoR bay (right)
+        isoCube(g, 4.5, 0, -3, 4.8, 0.35, 1.6, SoR, cx, cy, s);
+
+        // Records on right bay
+        for (let i = 0; i < 4; i++) {
+          isoCube(g, 3 + i * 1.1, 0.35, -3, 0.9, 0.7, 0.9, SoR, cx, cy, s);
+        }
+
+        // Conveyor stubs from SoC heading right
+        if (p >= 1) {
+          const stubs = [-1.5, 0, 1.5];
+          stubs.forEach((zoff, idx) => {
+            const stubLen = [0, 1.4, 1.8, 2.2, 2.4][p];
+            const startX = -1.0;
+            const startZ = 3.5 + zoff * 0.5;
+            const endX = startX + stubLen;
+            // conveyor as thin slab
+            isoCube(g, (startX + endX) / 2, 0.05, startZ, stubLen, 0.05, 0.35, { top: '#3A3A42', right: '#1E1E24', front: '#2A2A30', stroke: 'rgba(255,255,255,0.12)' }, cx, cy, s);
+            // items on conveyor (some on, some falling off the end)
+            const itemRng = mulberry32(601 + p * 10 + idx);
+            const itemCount = Math.floor(stubLen * 2);
+            for (let i = 0; i < itemCount; i++) {
+              const x = startX + (i / itemCount) * stubLen;
+              const y = 0.18;
+              const z = startZ;
+              const w = 0.35, h = 0.18, d = 0.30;
+              isoCube(g, x, y, z, w, h, d, SHARD, cx, cy, s);
+            }
+            // dropped items in the gap floor at end of conveyor (failed transfers)
+            if (p >= 2) {
+              const dropCount = [0, 0, 2, 4, 6][p];
+              for (let i = 0; i < dropCount; i++) {
+                const dx = endX + 0.3 + i * 0.25;
+                const dz = startZ + (itemRng() - 0.5) * 0.6;
+                isoScrap(g, dx, dz, cx, cy, s, [SHARD, SHARD_DIM, SHARD_DARK][Math.floor(itemRng() * 3)], undefined, undefined, undefined, (itemRng() - 0.5) * 50);
+              }
+            }
+          });
+        }
+
+        // Gap floor pile growing
+        if (p >= 3) {
+          const rng = mulberry32(701 + p);
+          const count = [0, 0, 0, 10, 22][p];
+          for (let i = 0; i < count; i++) {
+            const x = 0.5 + (rng() - 0.5) * 3;
+            const z = -1 + (rng() - 0.5) * 5;
+            isoScrap(g, x, z, cx, cy, s, [SHARD, SHARD_DIM, SHARD_DARK][Math.floor(rng() * 3)], undefined, undefined, undefined, (rng() - 0.5) * 60);
+          }
+        }
+      });
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // CONCEPT 04 — STRATIFIED DOCUMENT
+  //   A single document slab reveals it's actually two
+  //   strata with a void between. Coordination layer
+  //   crumbles through.
+  // ──────────────────────────────────────────────────────
+  function concept04(strip, panelW, panelH) {
+    const panels = 5;
+    for (let p = 0; p < panels; p++) {
+      drawPanel(strip, p, panels, panelW, panelH, (g, cx, cy, s) => {
+        isoFloor(g, cx, cy, s);
+
+        // Panel 1: looks like one solid document slab seen near-flat
+        // Panel 2: slab tilts to iso, revealing depth
+        // Panel 3-5: top stratum (records) intact; lower stratum (coordination) starts dropping fragments
+
+        const slabBaseY = 1.0;
+        const slabW = 5, slabD = 5;
+
+        if (p === 0) {
+          // one solid slab, viewed almost from front (no separation)
+          isoCube(g, 0, slabBaseY, 0, slabW, 0.8, slabD, { top: '#3D4049', right: '#1C1E25', front: '#2A2D35', stroke: 'rgba(255,255,255,0.20)' }, cx, cy, s);
+          // hint of records on top (thin lines)
+          for (let i = 0; i < 4; i++) {
+            const [ax, ay] = proj(-1.8 + i * 1.2, slabBaseY + 0.85, -1.8, cx, cy, s);
+            const [bx, by] = proj(-1.8 + i * 1.2, slabBaseY + 0.85, 1.8, cx, cy, s);
+            NS('line', { x1: ax, y1: ay, x2: bx, y2: by, stroke: 'rgba(255,255,255,0.30)', 'stroke-width': 0.8 }, g);
+          }
+        } else {
+          // Two strata with a void between
+          // SoR stratum (top)
+          isoCube(g, 0, slabBaseY + 0.7 + (p - 1) * 0.15, 0, slabW, 0.35, slabD, SoR, cx, cy, s);
+          // SoC stratum (bottom)
+          const socShrink = 1 - (p - 1) * 0.06;
+          isoCube(g, 0, slabBaseY, 0, slabW * socShrink, 0.35, slabD * socShrink, SoC, cx, cy, s);
+
+          // Void hatch on the floor between
+          isoVoidHatch(g, -2.6, -2.6, 2.6, 2.6, cx, cy, s, 12);
+
+          // Records on top stratum
+          for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+              const rx = -1.8 + i * 1.2;
+              const rz = -1.8 + j * 1.2;
+              const sm = 0.35;
+              isoCube(g, rx, slabBaseY + 1.05 + (p - 1) * 0.15, rz, sm, 0.18, sm, SoR, cx, cy, s);
+            }
+          }
+
+          // Coordination fragments — chaotic stuff on lower stratum, some falling
+          const rng = mulberry32(801 + p);
+          const fragCount = [0, 14, 22, 32, 40][p];
+          for (let i = 0; i < fragCount; i++) {
+            const fx = (rng() - 0.5) * (slabW * socShrink * 0.95);
+            const fz = (rng() - 0.5) * (slabD * socShrink * 0.95);
+            const fy = slabBaseY + 0.35;
+            const fw = 0.25 + rng() * 0.30;
+            const fd = 0.20 + rng() * 0.28;
+            const fh = 0.04 + rng() * 0.06;
+            isoCube(g, fx, fy, fz, fw, fh, fd, [SHARD, SHARD_DIM, SHARD_DARK][Math.floor(rng() * 3)], cx, cy, s, (rng() - 0.5) * 50);
+          }
+
+          // Falling-through items in the void
+          if (p >= 2) {
+            const fallCount = [0, 0, 5, 12, 20][p];
+            const frng = mulberry32(901 + p);
+            for (let i = 0; i < fallCount; i++) {
+              const fx = (frng() - 0.5) * 4;
+              const fz = (frng() - 0.5) * 4;
+              const fy = frng() * slabBaseY * 0.85;
+              isoCube(g, fx, fy, fz, 0.25, 0.06, 0.22, SHARD_DIM, cx, cy, s, (frng() - 0.5) * 50);
+            }
+          }
+
+          // Accumulated pile on ground
+          if (p >= 3) {
+            const groundCount = [0, 0, 0, 18, 36][p];
+            const grng = mulberry32(1001 + p);
+            for (let i = 0; i < groundCount; i++) {
+              const fx = (grng() - 0.5) * 4.5;
+              const fz = (grng() - 0.5) * 4.5;
+              isoScrap(g, fx, fz, cx, cy, s, [SHARD_DIM, SHARD_DARK][Math.floor(grng() * 2)], undefined, undefined, undefined, (grng() - 0.5) * 60);
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // CONCEPT 05 — THE EXPLICIT VOID
+  //   Hatched void on the floor between SoR and SoC.
+  //   Coordination items enter the void and vanish.
+  // ──────────────────────────────────────────────────────
+  function concept05(strip, panelW, panelH) {
+    const panels = 5;
+    for (let p = 0; p < panels; p++) {
+      drawPanel(strip, p, panels, panelW, panelH, (g, cx, cy, s) => {
+        isoFloor(g, cx, cy, s);
+
+        // The void grows from panel to panel
+        if (p >= 1) {
+          const wPad = [0, 0.6, 1.5, 2.2, 2.6][p];
+          isoVoidHatch(g, -wPad, -wPad - 0.3, wPad, wPad + 0.3, cx, cy, s, 16);
+        }
+
+        drawSoR(g, cx, cy, s);
+        drawSoC(g, cx, cy, s);
+
+        // Items emitted from SoC heading toward void
+        if (p >= 1) {
+          const arng = mulberry32(1101 + p);
+          const emitted = [0, 6, 10, 12, 14][p];
+          const kinds = ['env', 'chat', 'doc', 'cal', 'at', 'call'];
+          for (let i = 0; i < emitted; i++) {
+            const t = i / emitted;
+            const startX = -3 + (arng() - 0.5) * 1.5;
+            const startZ = 3.5 + (arng() - 0.5) * 1.5;
+            const endX = (arng() - 0.5) * 1.0; // ends in void
+            const endZ = (arng() - 0.5) * 1.0;
+            const startY = 1.5 + arng() * 0.8;
+            const endY = 0.1;
+            // Path: travelling atom — show its position somewhere along the arc
+            const along = 0.3 + arng() * 0.65;
+            const midY = startY + (endY - startY) * along * along; // gravity
+            const x = startX + (endX - startX) * along;
+            const z = startZ + (endZ - startZ) * along;
+            isoAtom(g, x, midY, z, kinds[Math.floor(arng() * kinds.length)], cx, cy, s);
+            // Faint trail
+            const [sx, sy] = proj(startX, startY, startZ, cx, cy, s);
+            const [tx, ty] = proj(x, midY, z, cx, cy, s);
+            NS('line', { x1: sx, y1: sy, x2: tx, y2: ty, stroke: 'rgba(200,185,143,0.12)', 'stroke-width': 0.5 }, g);
+          }
+        }
+
+        // Most never resurface — but a few thin filaments reach SoR
+        if (p >= 3) {
+          const lines = [0, 0, 0, 1, 2][p];
+          for (let i = 0; i < lines; i++) {
+            const s1 = proj(-1.5 + i * 0.8, 1.4, 2, cx, cy, s);
+            const s2 = proj(4.5 + (i - 0.5) * 1.2, 1.0, -3, cx, cy, s);
+            const m = [(s1[0] + s2[0]) / 2, (s1[1] + s2[1]) / 2 - 30];
+            NS('path', { d: `M${s1[0]},${s1[1]} Q${m[0]},${m[1]} ${s2[0]},${s2[1]}`, fill: 'none', stroke: 'rgba(200,185,143,0.30)', 'stroke-width': 0.9 }, g);
+          }
+        }
+      });
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // CONCEPT 06 — TANGLED THREADS
+  //   Lines emerge from SoC; most knot in the gap; only
+  //   a few reach SoR cleanly. The tangle accumulates.
+  // ──────────────────────────────────────────────────────
+  function concept06(strip, panelW, panelH) {
+    const panels = 5;
+    for (let p = 0; p < panels; p++) {
+      drawPanel(strip, p, panels, panelW, panelH, (g, cx, cy, s) => {
+        isoFloor(g, cx, cy, s);
+        drawSoR(g, cx, cy, s);
+        drawSoC(g, cx, cy, s);
+
+        const threadCount = [0, 4, 8, 14, 22][p];
+        const rng = mulberry32(1201 + p);
+        const cx0 = -3, cz0 = 3.5;
+        const sorAnchor = { x: 4.5, z: -3 };
+
+        for (let i = 0; i < threadCount; i++) {
+          const startX = cx0 + (rng() - 0.5) * 2.4;
+          const startZ = cz0 + (rng() - 0.5) * 2.4;
+          const startY = 0.5 + rng() * 1.5;
+          // 80% of threads dead-end somewhere in the gap; 20% reach SoR
+          const reachesSoR = rng() < 0.18;
+          let endX, endZ, endY;
+          if (reachesSoR) {
+            endX = sorAnchor.x - 1.5 + rng() * 3;
+            endZ = sorAnchor.z + (rng() - 0.5) * 0.4;
+            endY = 0.9 + rng() * 0.3;
+          } else {
+            endX = (rng() - 0.5) * 4;
+            endZ = (rng() - 0.5) * 4;
+            endY = rng() * 0.6;
+          }
+          // wobble mid-point for the tangle
+          const midX = (startX + endX) / 2 + (rng() - 0.5) * 1.8;
+          const midZ = (startZ + endZ) / 2 + (rng() - 0.5) * 1.8;
+          const midY = (startY + endY) / 2 + rng() * 1.4;
+          // sample 16 points along quadratic bezier
+          const samples = 18;
+          const pathPts = [];
+          for (let t = 0; t <= samples; t++) {
+            const u = t / samples;
+            const xx = (1 - u) * (1 - u) * startX + 2 * (1 - u) * u * midX + u * u * endX;
+            const yy = (1 - u) * (1 - u) * startY + 2 * (1 - u) * u * midY + u * u * endY;
+            const zz = (1 - u) * (1 - u) * startZ + 2 * (1 - u) * u * midZ + u * u * endZ;
+            pathPts.push(proj(xx, yy, zz, cx, cy, s));
+          }
+          const d = 'M' + pathPts.map(pt => pt.join(',')).join(' L');
+          const colour = reachesSoR ? 'rgba(200,185,143,0.55)' : 'rgba(200,185,143,0.18)';
+          const sw = reachesSoR ? 1.1 : 0.6;
+          NS('path', { d, fill: 'none', stroke: colour, 'stroke-width': sw, 'stroke-linecap': 'round' }, g);
+          // small dot at the dead-end tip
+          if (!reachesSoR) {
+            const [dx, dy] = proj(endX, endY, endZ, cx, cy, s);
+            NS('circle', { cx: dx, cy: dy, r: 1.6, fill: 'rgba(200,185,143,0.40)' }, g);
+          }
+        }
+      });
+    }
+  }
+
+  // ──────────────────────────────────────────────────────
+  // RENDER ALL CONCEPTS
+  // ──────────────────────────────────────────────────────
+  const concepts = [
+    { id: 'c01', title: 'THE PILE-UP', fn: concept01 },
+    { id: 'c02', title: 'ORBITAL DRIFT', fn: concept02 },
+    { id: 'c03', title: 'SEVERED CONVEYORS', fn: concept03 },
+    { id: 'c04', title: 'STRATIFIED DOCUMENT', fn: concept04 },
+    { id: 'c05', title: 'THE EXPLICIT VOID', fn: concept05 },
+    { id: 'c06', title: 'TANGLED THREADS', fn: concept06 },
+  ];
+
+  const main = document.getElementById('main');
+  const toc = document.getElementById('toc');
+  concepts.forEach((c, idx) => {
+    // TOC link
+    const a = document.createElement('a');
+    a.href = `#${c.id}`;
+    a.textContent = `${String(idx + 1).padStart(2, '0')} ${c.title}`;
+    toc.appendChild(a);
+    // Section
+    const section = document.createElement('section');
+    section.className = 'concept';
+    section.id = c.id;
+    const h = document.createElement('div');
+    h.className = 'title';
+    h.innerHTML = `<span class="num">${String(idx + 1).padStart(2, '0')}</span>${c.title}`;
+    section.appendChild(h);
+    const stripDiv = document.createElement('div');
+    stripDiv.className = 'strip';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const panels = 5;
+    const panelW = 400;
+    const panelH = 480;
+    svg.setAttribute('viewBox', `0 0 ${panels * panelW} ${panelH}`);
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    c.fn(svg, panelW, panelH);
+    stripDiv.appendChild(svg);
+    section.appendChild(stripDiv);
+    main.appendChild(section);
+  });
+})();
+</script>
+</body>
+</html>

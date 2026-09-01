@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Exploration 1 — The Pile-Up</title>
+<style>
+  body {
+    margin: 0;
+    background: #08090d;
+    color: #d8d8e0;
+    font-family: ui-sans-serif, -apple-system, system-ui, sans-serif;
+  }
+  .wrap { max-width: 1700px; margin: 0 auto; padding: 24px 32px; }
+  h1 { font-size: 14px; font-weight: 600; letter-spacing: 0.04em; color: #aaa; margin: 0 0 4px; }
+  .sub { font-size: 12px; color: #666; margin: 0 0 16px; }
+  svg#scene { display: block; width: 100%; height: auto; background: #08090d; border: 1px solid #1a1a22; border-radius: 4px; }
+  .legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 20px; font-size: 12px; color: #888; }
+  .legend h3 { color: #ccc; font-size: 12px; font-weight: 600; margin: 0 0 6px; letter-spacing: 0.04em; }
+  .legend p { margin: 4px 0; line-height: 1.5; }
+  .swatch { display: inline-block; width: 10px; height: 10px; vertical-align: middle; margin-right: 6px; border: 1px solid #2a2a30; }
+  .meta { margin-top: 24px; padding: 16px; background: #0e0f14; border: 1px solid #1a1a22; border-radius: 4px; font-size: 12px; color: #888; line-height: 1.6; }
+  .meta strong { color: #ccc; }
+  .meta em { color: #b8a888; font-style: normal; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>EXPLORATION 1 — THE PILE-UP (with surface detail)</h1>
+  <p class="sub">Systems of Record vs. Systems of Coordination · the cost of misalignment, made visible · near-iso, az 20°, el 30°</p>
+  <svg id="scene" viewBox="0 0 1600 900"></svg>
+  <div class="legend">
+    <div>
+      <h3>SYSTEMS OF RECORD</h3>
+      <p><span class="swatch" style="background:#3d4049"></span>Graphite cluster · y_top = 0.6</p>
+      <p>6 systems labelled QMS · ERP · PLM · DMS · LIMS · MES.</p>
+      <p>Each has 4-square glyph + monospace label on top face.</p>
+    </div>
+    <div>
+      <h3>SYSTEMS OF COORDINATION</h3>
+      <p><span class="swatch" style="background:#3a6aff"></span>Blue cluster · y_top = 0.2</p>
+      <p>Type-icons on each: chat bubble, envelope, calendar, doc-lines, grid, threads.</p>
+      <p>Daily-tool visual language.</p>
+    </div>
+    <div>
+      <h3>THE PILE-UP</h3>
+      <p><span class="swatch" style="background:#c5b89e"></span>Cream paper-residue · y = 0</p>
+      <p>~50 fragments with ink: text-lines, grid, check/X, signature, stamp.</p>
+      <p>Each scrap reads as <em>what it actually is</em>.</p>
+    </div>
+  </div>
+  <div class="meta">
+    Three places to look: (1) the labels and 4-square glyphs on the records — does this read as <em>multiple systems</em> rather than one platform? (2) the icons on the coordination cluster — do they feel like <em>daily tools</em> without overpowering the silhouette? (3) the pile-up — at hover-zoom, can you see that some scraps are <em>emails</em>, some are <em>spreadsheet fragments</em>, some are <em>signed forms</em>?
+    The plinth elevation gap (Record 0.6, Coord 0.2) is the structural signal under the recognition layer.
+  </div>
+</div>
+
+<script>
+(() => {
+  const svg = document.getElementById('scene');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  // ── ISO PROJECTION (az=20°, el=30°) ──
+  const SCALE = 32;
+  const OX = 800;
+  const OY = 470;
+  const PX = 0.940, PXY = 0.171;
+  const PZ = -0.342, PZY = 0.470;
+  const PYY = -0.866;
+
+  const proj = (x, y, z) => [
+    SCALE * (PX * x + PZ * z) + OX,
+    SCALE * (PXY * x + PYY * y + PZY * z) + OY,
+  ];
+
+  const make = (name, attrs, parent) => {
+    const e = document.createElementNS(NS, name);
+    for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+    (parent || svg).appendChild(e);
+    return e;
+  };
+
+  // ── ISO BOX HELPER ──
+  function isoBox({ cx, cz, yBase = 0, w, h, d, top, right, front, edge = 'rgba(255,255,255,0.22)', edgeWidth = 0.6, rotate = 0, parent }) {
+    const hw = w / 2, hd = d / 2;
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    const localToWorld = (lx, ly, lz) => [
+      cx + lx * cosR - lz * sinR,
+      yBase + ly,
+      cz + lx * sinR + lz * cosR,
+    ];
+    const c = (lx, ly, lz) => proj(...localToWorld(lx, ly, lz));
+    const blf = c(-hw, 0, hd);
+    const brf = c(hw, 0, hd);
+    const brb = c(hw, 0, -hd);
+    const tlf = c(-hw, h, hd);
+    const trf = c(hw, h, hd);
+    const trb = c(hw, h, -hd);
+    const tlb = c(-hw, h, -hd);
+    const pp = pts => pts.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
+    const g = parent || svg;
+    make('polygon', { points: pp([blf, brf, trf, tlf]), fill: front, stroke: edge, 'stroke-width': edgeWidth }, g);
+    make('polygon', { points: pp([brf, brb, trb, trf]), fill: right, stroke: edge, 'stroke-width': edgeWidth }, g);
+    make('polygon', { points: pp([tlb, trb, trf, tlf]), fill: top, stroke: edge, 'stroke-width': edgeWidth }, g);
+  }
+
+  // ── PLACE FLAT 2D CONTENT ON A TOP FACE ──
+  // Returns a <g> with a transform that maps local (x,z) coords onto the iso top face.
+  // local x → world X axis, local y → world Z axis.
+  function placeOnTop(cx, cz, yTop, rotate = 0, parent) {
+    // include local rotation in the matrix
+    const cosR = Math.cos(rotate * Math.PI / 180);
+    const sinR = Math.sin(rotate * Math.PI / 180);
+    // World vectors after rotation: local x = (cosR, 0, sinR); local y = (-sinR, 0, cosR)
+    // Project these to screen
+    const [ax, ay] = [SCALE * (PX * cosR + PZ * sinR), SCALE * (PXY * cosR + PZY * sinR)];
+    const [bx, by] = [SCALE * (PX * (-sinR) + PZ * cosR), SCALE * (PXY * (-sinR) + PZY * cosR)];
+    const [tx, ty] = proj(cx, yTop + 0.001, cz);
+    const g = make('g', { transform: `matrix(${ax.toFixed(3)} ${ay.toFixed(3)} ${bx.toFixed(3)} ${by.toFixed(3)} ${tx.toFixed(2)} ${ty.toFixed(2)})` }, parent);
+    return g;
+  }
+
+  // ── 1. FLOOR GRID ──
+  const gridG = make('g', { opacity: '0.55' });
+  const FLOOR = 22;
+  const DIV = 44;
+  const half = FLOOR / 2;
+  const step = FLOOR / DIV;
+  for (let i = 0; i <= DIV; i++) {
+    const t = -half + i * step;
+    const inGap = Math.abs(t) < 2.4;
+    const [a, b] = proj(-half, 0, t);
+    const [c1, d1] = proj(half, 0, t);
+    make('line', { x1: a, y1: b, x2: c1, y2: d1, stroke: '#1a1a22', 'stroke-width': 0.5 }, gridG);
+    const [e, f] = proj(t, 0, -half);
+    const [g1, h1] = proj(t, 0, half);
+    make('line', { x1: e, y1: f, x2: g1, y2: h1, stroke: inGap ? '#0c0d11' : '#1a1a22', 'stroke-width': 0.5 }, gridG);
+  }
+
+  // ── 2. THE PILE-UP — paper residue with ink ──
+  function mulberry32(seed) {
+    return function () {
+      let t = (seed += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rand = mulberry32(13);
+
+  const clumps = [
+    { cz: -3.0, count: 14, spread: 1.6 },
+    { cz:  0.0, count: 18, spread: 2.0 },
+    { cz:  3.0, count: 12, spread: 1.6 },
+  ];
+  const stragglers = 8;
+
+  const FRAGMENT_KINDS = [
+    { kind: 'text-lines', weight: 30 },
+    { kind: 'grid',       weight: 18 },
+    { kind: 'check',      weight: 14 },
+    { kind: 'signature',  weight: 12 },
+    { kind: 'stamp',      weight: 10 },
+    { kind: 'blank',      weight: 16 },
+  ];
+  const totalKindWeight = FRAGMENT_KINDS.reduce((s, k) => s + k.weight, 0);
+  function pickKind() {
+    let r = rand() * totalKindWeight;
+    for (const k of FRAGMENT_KINDS) {
+      r -= k.weight;
+      if (r <= 0) return k.kind;
+    }
+    return 'blank';
+  }
+
+  const residue = [];
+  for (const clump of clumps) {
+    for (let i = 0; i < clump.count; i++) {
+      const u = rand(), v = rand();
+      const gx = Math.sqrt(-2 * Math.log(u + 1e-9)) * Math.cos(2 * Math.PI * v);
+      const gz = Math.sqrt(-2 * Math.log(u + 1e-9)) * Math.sin(2 * Math.PI * v);
+      const cx = Math.max(-2.0, Math.min(2.0, gx * 0.9));
+      const cz = clump.cz + Math.max(-clump.spread, Math.min(clump.spread, gz * 0.8));
+      const elongated = rand() < 0.3;
+      const baseW = 0.40 + rand() * 0.55;
+      const baseD = 0.32 + rand() * 0.45;
+      const w = elongated ? baseW * (1.5 + rand() * 0.7) : baseW;
+      const d = baseD;
+      const h = 0.04 + rand() * 0.06;
+      const toneIdx = Math.floor(rand() * 4);
+      const tones = [
+        ['#d6cda8', '#a8956a', '#8a7858'],
+        ['#c8bb98', '#9a8860', '#7c6a4c'],
+        ['#bcab85', '#8e7c54', '#705e40'],
+        ['#cec3a0', '#a09060', '#7e6e4e'],
+      ];
+      const [topC, rightC, frontC] = tones[toneIdx];
+      const rotate = (rand() - 0.5) * 36;
+      residue.push({ cx, cz, w, h, d, topC, rightC, frontC, rotate, kind: pickKind() });
+    }
+  }
+  for (let i = 0; i < stragglers; i++) {
+    residue.push({
+      cx: (rand() - 0.5) * 4.0,
+      cz: (rand() - 0.5) * 9.0,
+      w: 0.34 + rand() * 0.4,
+      h: 0.04 + rand() * 0.05,
+      d: 0.28 + rand() * 0.4,
+      topC: '#bcae88', rightC: '#8e7c54', frontC: '#705e40',
+      rotate: (rand() - 0.5) * 36,
+      kind: pickKind(),
+    });
+  }
+  residue.sort((a, b) => (a.cx + a.cz) - (b.cx + b.cz));
+
+  const residueG = make('g');
+  for (const r of residue) {
+    isoBox({
+      cx: r.cx, cz: r.cz, yBase: 0,
+      w: r.w, h: r.h, d: r.d, rotate: r.rotate,
+      top: r.topC, right: r.rightC, front: r.frontC,
+      edge: 'rgba(120,90,40,0.35)', edgeWidth: 0.4,
+      parent: residueG,
+    });
+    // ink on the top face — the load-bearing detail
+    if (r.kind === 'blank') continue;
+    const ink = '#4a3820';
+    const inkOp = 0.55;
+    const margin = 0.10;
+    const usableW = r.w - margin * 2;
+    const usableD = r.d - margin * 2;
+    const inkLayer = placeOnTop(r.cx, r.cz, r.h, r.rotate, residueG);
+
+    if (r.kind === 'text-lines') {
+      const lines = 3 + Math.floor(rand() * 2);
+      for (let i = 0; i < lines; i++) {
+        const y = -usableD / 2 + (i + 1) * (usableD / (lines + 1));
+        const lineW = usableW * (0.6 + rand() * 0.35);
+        make('line', {
+          x1: -lineW / 2, y1: y, x2: lineW / 2, y2: y,
+          stroke: ink, 'stroke-width': 0.025, opacity: inkOp,
+        }, inkLayer);
+      }
+    } else if (r.kind === 'grid') {
+      const cols = 3, rows = 3;
+      for (let i = 1; i < cols; i++) {
+        const x = -usableW / 2 + i * (usableW / cols);
+        make('line', { x1: x, y1: -usableD / 2, x2: x, y2: usableD / 2, stroke: ink, 'stroke-width': 0.020, opacity: inkOp }, inkLayer);
+      }
+      for (let j = 1; j < rows; j++) {
+        const y = -usableD / 2 + j * (usableD / rows);
+        make('line', { x1: -usableW / 2, y1: y, x2: usableW / 2, y2: y, stroke: ink, 'stroke-width': 0.020, opacity: inkOp }, inkLayer);
+      }
+    } else if (r.kind === 'check') {
+      // checkbox + check or X
+      const size = Math.min(usableW, usableD) * 0.45;
+      make('rect', {
+        x: -size / 2 - 0.05, y: -size / 2,
+        width: size, height: size,
+        fill: 'none', stroke: ink, 'stroke-width': 0.025, opacity: inkOp,
+      }, inkLayer);
+      // a check
+      const cx0 = -size / 2 - 0.05;
+      const cy0 = 0;
+      make('polyline', {
+        points: `${cx0 + 0.08},${cy0 + 0.04} ${cx0 + size * 0.4},${cy0 + size * 0.3} ${cx0 + size - 0.05},${cy0 - size * 0.35}`,
+        fill: 'none', stroke: ink, 'stroke-width': 0.035, opacity: inkOp + 0.1,
+      }, inkLayer);
+      // little signature line next to checkbox
+      make('line', {
+        x1: 0.08, y1: 0,
+        x2: usableW / 2 - 0.05, y2: 0,
+        stroke: ink, 'stroke-width': 0.022, opacity: inkOp,
+      }, inkLayer);
+    } else if (r.kind === 'signature') {
+      // wavy signature
+      const seg = 8;
+      const startX = -usableW * 0.4;
+      const endX = usableW * 0.4;
+      const yMid = 0.02;
+      let path = `M ${startX} ${yMid}`;
+      for (let i = 1; i <= seg; i++) {
+        const x = startX + (endX - startX) * (i / seg);
+        const y = yMid + (rand() - 0.5) * 0.08;
+        path += ` Q ${x - (endX - startX) / (seg * 2)} ${y - 0.05} ${x} ${y}`;
+      }
+      make('path', { d: path, fill: 'none', stroke: ink, 'stroke-width': 0.032, opacity: inkOp + 0.1 }, inkLayer);
+      // a base line under it
+      make('line', {
+        x1: startX - 0.04, y1: yMid + 0.10,
+        x2: endX + 0.04, y2: yMid + 0.10,
+        stroke: ink, 'stroke-width': 0.018, opacity: inkOp - 0.15,
+      }, inkLayer);
+    } else if (r.kind === 'stamp') {
+      // circular stamp + faded center
+      const radius = Math.min(usableW, usableD) * 0.32;
+      make('circle', {
+        cx: 0, cy: 0, r: radius,
+        fill: 'none', stroke: '#9a3424', 'stroke-width': 0.04, opacity: 0.55,
+      }, inkLayer);
+      make('circle', {
+        cx: 0, cy: 0, r: radius * 0.65,
+        fill: 'none', stroke: '#9a3424', 'stroke-width': 0.025, opacity: 0.4,
+      }, inkLayer);
+      // tiny mark in center
+      make('line', {
+        x1: -radius * 0.35, y1: 0, x2: radius * 0.35, y2: 0,
+        stroke: '#9a3424', 'stroke-width': 0.025, opacity: 0.5,
+      }, inkLayer);
+    }
+  }
+
+  // ── 3. LEFT PLINTH (Record platform — y_top = 0.6) ──
+  isoBox({
+    cx: -7.5, cz: 0, yBase: 0,
+    w: 10, h: 0.6, d: 9,
+    top: '#1c1e26', right: '#11131a', front: '#0a0c12',
+    edge: 'rgba(255,255,255,0.18)', edgeWidth: 0.7,
+  });
+
+  // ── 4. RIGHT PLINTH (Coord platform — y_top = 0.2, lower) ──
+  isoBox({
+    cx: 7.5, cz: 0, yBase: 0,
+    w: 10, h: 0.2, d: 9,
+    top: '#11131a', right: '#0a0c12', front: '#070a10',
+    edge: 'rgba(255,255,255,0.18)', edgeWidth: 0.7,
+  });
+  const cellG = make('g', { opacity: '0.5' });
+  const PXc = 7.5, PZc = 0, PWc = 10, PDc = 9, PYc = 0.21;
+  for (let i = 1; i < 3; i++) {
+    const lx = PXc - PWc / 2 + (i * PWc / 3);
+    const [x1, y1] = proj(lx, PYc, PZc - PDc / 2);
+    const [x2, y2] = proj(lx, PYc, PZc + PDc / 2);
+    make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.13)', 'stroke-width': 0.5 }, cellG);
+  }
+  for (let i = 1; i < 3; i++) {
+    const lz = PZc - PDc / 2 + (i * PDc / 3);
+    const [x1, y1] = proj(PXc - PWc / 2, PYc, lz);
+    const [x2, y2] = proj(PXc + PWc / 2, PYc, lz);
+    make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.13)', 'stroke-width': 0.5 }, cellG);
+  }
+
+  // ── 5. RECORD VOLUMES (graphite, with strata + top label + 4-square glyph) ──
+  const RECORD_TOP = '#3d4049';
+  const RECORD_RIGHT = '#2a2c34';
+  const RECORD_FRONT = '#1c1e26';
+  const records = [
+    { id: 'R1', label: 'QMS',  cx: -10.5, cz: -2.8, w: 2.0, h: 4.0, d: 2.0 },
+    { id: 'R2', label: 'ERP',  cx:  -7.0, cz: -2.8, w: 2.5, h: 2.8, d: 2.5 },
+    { id: 'R3', label: 'PLM',  cx: -10.0, cz:  0.5, w: 1.8, h: 3.2, d: 1.8 },
+    { id: 'R4', label: 'DMS',  cx:  -6.5, cz:  0.5, w: 2.2, h: 2.5, d: 2.2 },
+    { id: 'R5', label: 'LIMS', cx:  -8.5, cz:  3.0, w: 1.4, h: 1.8, d: 1.4 },
+    { id: 'R6', label: 'MES',  cx:  -4.5, cz:  2.0, w: 1.5, h: 3.5, d: 1.5 },
+  ];
+  records.sort((a, b) => (a.cx + a.cz) - (b.cx + b.cz));
+  const recordG = make('g');
+  for (const r of records) {
+    isoBox({
+      cx: r.cx, cz: r.cz, yBase: 0.6,
+      w: r.w, h: r.h, d: r.d,
+      top: RECORD_TOP, right: RECORD_RIGHT, front: RECORD_FRONT,
+      edge: 'rgba(255,255,255,0.30)', edgeWidth: 0.65,
+      parent: recordG,
+    });
+    // strata lines on the front face (suggest ledger / drawer rows)
+    const strataCount = Math.max(4, Math.floor(r.h * 1.8));
+    for (let i = 1; i < strataCount; i++) {
+      const sy = (r.h / strataCount) * i;
+      const [x1, y1] = proj(r.cx - r.w / 2, 0.6 + sy, r.cz + r.d / 2);
+      const [x2, y2] = proj(r.cx + r.w / 2, 0.6 + sy, r.cz + r.d / 2);
+      make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.10)', 'stroke-width': 0.4 }, recordG);
+    }
+    for (let i = 1; i < strataCount; i++) {
+      const sy = (r.h / strataCount) * i;
+      const [x1, y1] = proj(r.cx + r.w / 2, 0.6 + sy, r.cz + r.d / 2);
+      const [x2, y2] = proj(r.cx + r.w / 2, 0.6 + sy, r.cz - r.d / 2);
+      make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.07)', 'stroke-width': 0.4 }, recordG);
+    }
+    // top face: 4-square glyph + label
+    const top = placeOnTop(r.cx, r.cz, 0.6 + r.h, 0, recordG);
+    // 4-square dot icon (centered, slightly above the label)
+    const isz = Math.min(r.w, r.d) * 0.13;
+    const igap = isz * 0.28;
+    const totalGlyphW = isz * 2 + igap;
+    const glyphCenterY = -Math.min(r.w, r.d) * 0.10;
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 2; col++) {
+        make('rect', {
+          x: (-totalGlyphW / 2) + col * (isz + igap),
+          y: (glyphCenterY - totalGlyphW / 2) + row * (isz + igap),
+          width: isz, height: isz,
+          rx: isz * 0.15,
+          fill: 'white', opacity: 0.95,
+        }, top);
+      }
+    }
+    // label
+    const labelText = make('text', {
+      x: 0, y: Math.min(r.w, r.d) * 0.18,
+      'text-anchor': 'middle',
+      'dominant-baseline': 'middle',
+      'font-family': 'ui-monospace, "SF Mono", Menlo, monospace',
+      'font-size': Math.min(r.w, r.d) * 0.22,
+      'font-weight': 700,
+      'letter-spacing': 0.02,
+      fill: 'white',
+      opacity: 0.92,
+    }, top);
+    labelText.textContent = r.label;
+  }
+
+  // ── 6. COORDINATION ELEMENTS (varied silhouettes, blue family + top-face icons) ──
+  const COORD_VARIANTS = [
+    { top: '#3a6aff', right: '#1840ff', front: '#0c2cb8' },
+    { top: '#5080ff', right: '#2050ff', front: '#0e30c8' },
+    { top: '#2858ff', right: '#0e3aee', front: '#0518a0' },
+  ];
+  const CELL_X = [4.83, 7.5, 10.17];
+  const CELL_Z = [-3, 0, 3];
+  const coords = [
+    { type: 'chat-stack',    cell: [0, 0], w: 1.2, h: 1.5, d: 1.2, icon: 'chat' },
+    { type: 'thread-pillar', cell: [0, 1], w: 0.8, h: 3.0, d: 0.8, icon: 'thread' },
+    { type: 'email-slab',    cell: [0, 2], w: 2.0, h: 0.4, d: 1.4, rotate: -8, icon: 'envelope' },
+    { type: 'meeting-tile',  cell: [1, 0], w: 1.6, h: 0.3, d: 1.6, icon: 'people' },
+    { type: 'spreadsheet',   cell: [1, 2], w: 2.2, h: 0.4, d: 1.8, icon: 'grid' },
+    { type: 'doc-slab',      cell: [2, 0], w: 1.8, h: 0.3, d: 1.4, rotate: 6, icon: 'doc' },
+    { type: 'chat-stack',    cell: [2, 1], w: 1.4, h: 1.2, d: 1.4, icon: 'chat' },
+    { type: 'thread-pillar', cell: [2, 2], w: 0.7, h: 2.5, d: 0.7, icon: 'thread' },
+  ];
+  const coordEntries = coords.map((c, i) => ({
+    ...c,
+    cx: CELL_X[c.cell[1]],
+    cz: CELL_Z[c.cell[0]],
+    variant: COORD_VARIANTS[i % 3],
+  }));
+  coordEntries.sort((a, b) => (a.cx + a.cz) - (b.cx + b.cz));
+
+  const coordG = make('g');
+
+  function drawCoordIcon(parent, type, size) {
+    const w = size * 0.55;
+    const op = 0.92;
+    if (type === 'chat') {
+      // rounded chat bubble with little tail
+      const rx = w * 0.25;
+      make('rect', {
+        x: -w / 2, y: -w * 0.35, width: w, height: w * 0.7,
+        rx: rx, fill: 'white', opacity: op,
+      }, parent);
+      make('polygon', {
+        points: `${-w * 0.18},${w * 0.35} ${-w * 0.04},${w * 0.55} ${w * 0.06},${w * 0.35}`,
+        fill: 'white', opacity: op,
+      }, parent);
+    } else if (type === 'envelope') {
+      make('rect', {
+        x: -w / 2, y: -w * 0.32, width: w, height: w * 0.64,
+        fill: 'none', stroke: 'white', 'stroke-width': size * 0.04, opacity: op,
+      }, parent);
+      make('polyline', {
+        points: `${-w / 2},${-w * 0.32} 0,${w * 0.05} ${w / 2},${-w * 0.32}`,
+        fill: 'none', stroke: 'white', 'stroke-width': size * 0.04, opacity: op,
+      }, parent);
+    } else if (type === 'people') {
+      // two heads
+      const r = w * 0.16;
+      const dx = w * 0.22;
+      make('circle', { cx: -dx, cy: -w * 0.05, r: r, fill: 'white', opacity: op }, parent);
+      make('circle', { cx:  dx, cy: -w * 0.05, r: r, fill: 'white', opacity: op }, parent);
+      // shoulders
+      make('path', {
+        d: `M ${-dx - r * 1.4} ${w * 0.35} Q ${-dx} ${w * 0.10} ${-dx + r * 0.8} ${w * 0.20}`,
+        fill: 'none', stroke: 'white', 'stroke-width': size * 0.04, opacity: op,
+      }, parent);
+      make('path', {
+        d: `M ${dx - r * 0.8} ${w * 0.20} Q ${dx} ${w * 0.10} ${dx + r * 1.4} ${w * 0.35}`,
+        fill: 'none', stroke: 'white', 'stroke-width': size * 0.04, opacity: op,
+      }, parent);
+    } else if (type === 'doc') {
+      // 3 horizontal lines (already on body) + corner fold
+      for (let i = 0; i < 3; i++) {
+        const y = -w * 0.25 + i * (w * 0.22);
+        const len = w * (0.7 - i * 0.08);
+        make('line', {
+          x1: -len / 2, y1: y, x2: len / 2, y2: y,
+          stroke: 'white', 'stroke-width': size * 0.045, opacity: op,
+        }, parent);
+      }
+    } else if (type === 'grid') {
+      // small 3x3 grid icon
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          make('rect', {
+            x: -w / 2 + c * (w / 3) + w * 0.03,
+            y: -w * 0.35 + r * (w * 0.22) + w * 0.02,
+            width: w / 3 - w * 0.06,
+            height: w * 0.18,
+            fill: 'white', opacity: op,
+          }, parent);
+        }
+      }
+    } else if (type === 'thread') {
+      // 3 vertical dots
+      for (let i = 0; i < 3; i++) {
+        make('circle', {
+          cx: 0, cy: -w * 0.3 + i * (w * 0.3),
+          r: w * 0.1,
+          fill: 'white', opacity: op,
+        }, parent);
+      }
+    }
+  }
+
+  for (const c of coordEntries) {
+    if (c.type === 'meeting-tile') {
+      const mini = 0.5, gap = 0.1;
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+        isoBox({
+          cx: c.cx + (i - 0.5) * (mini + gap),
+          cz: c.cz + (j - 0.5) * (mini + gap),
+          yBase: 0.2, w: mini, h: 0.5 + i * 0.1, d: mini,
+          top: c.variant.top, right: c.variant.right, front: c.variant.front,
+          edge: 'rgba(255,255,255,0.32)', parent: coordG,
+        });
+      }
+      // overall icon on top of the 4-cube cluster footprint
+      const topMax = 0.2 + 0.7;
+      const iconLayer = placeOnTop(c.cx, c.cz, topMax, 0, coordG);
+      drawCoordIcon(iconLayer, c.icon, Math.min(c.w, c.d) * 0.85);
+      continue;
+    }
+    if (c.type === 'chat-stack') {
+      const offsets = [
+        { dx: 0,    dz: 0,    h: c.h * 0.55 },
+        { dx: 0.15, dz: -0.2, h: c.h * 0.4 },
+        { dx: -0.1, dz: 0.18, h: c.h * 0.7 },
+      ];
+      let tallestH = 0, tallestDx = 0, tallestDz = 0;
+      for (const o of offsets) {
+        isoBox({
+          cx: c.cx + o.dx, cz: c.cz + o.dz, yBase: 0.2,
+          w: 0.7, h: o.h, d: 0.7,
+          top: c.variant.top, right: c.variant.right, front: c.variant.front,
+          edge: 'rgba(255,255,255,0.32)', parent: coordG,
+        });
+        if (o.h > tallestH) { tallestH = o.h; tallestDx = o.dx; tallestDz = o.dz; }
+      }
+      // icon on the tallest cube
+      const iconLayer = placeOnTop(c.cx + tallestDx, c.cz + tallestDz, 0.2 + tallestH, 0, coordG);
+      drawCoordIcon(iconLayer, c.icon, 0.7);
+      continue;
+    }
+    isoBox({
+      cx: c.cx, cz: c.cz, yBase: 0.2,
+      w: c.w, h: c.h, d: c.d, rotate: c.rotate || 0,
+      top: c.variant.top, right: c.variant.right, front: c.variant.front,
+      edge: 'rgba(255,255,255,0.32)', parent: coordG,
+    });
+    if (c.type === 'thread-pillar') {
+      for (let i = 1; i < 4; i++) {
+        const sy = (c.h / 4) * i;
+        const [x1, y1] = proj(c.cx - c.w / 2, 0.2 + sy, c.cz + c.d / 2);
+        const [x2, y2] = proj(c.cx + c.w / 2, 0.2 + sy, c.cz + c.d / 2);
+        make('line', { x1, y1, x2, y2, stroke: 'rgba(255,255,255,0.30)', 'stroke-width': 0.5 }, coordG);
+      }
+    }
+    // top icon
+    const iconLayer = placeOnTop(c.cx, c.cz, 0.2 + c.h, c.rotate || 0, coordG);
+    drawCoordIcon(iconLayer, c.icon, Math.min(c.w, c.d) * 0.75);
+  }
+})();
+</script>
+</body>
+</html>
