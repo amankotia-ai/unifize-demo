@@ -1,0 +1,37 @@
+{
+  "personaId": "ehs-process-owner",
+  "firstImpression": "The sub line reads Designed for ISO and FDA-regulated teams before I have seen anything about my own workflow, so my gut reaction is here we go, another quality tool.",
+  "comprehension": "This reads like a configurable workflow platform: forms, approvals, escalations, dashboards, meant to stop the email and spreadsheet chase between departments. It would sit somewhere near our SharePoint trackers and Outlook, maybe replacing the back and forth, but the page frames itself as ISO and FDA-regulated, so I cannot yet tell if it is the same system our quality team runs or something I could actually own for EH&S.",
+  "resonance": 2,
+  "resonanceReason": "Anchor 2: I see a named job-to-be-done of mine (No-Code Process Builder, Approval Workflows, Reminder and Escalation Workflows map to configuring my own incident and corrective action process without IT and without the handoffs dying), and I have named objections that block booking a demo right now: every testimonial on the page is a quality title, and the copy leans CFR Part 11 and ISO/FDA throughout, which raises my is this QMS-only concern.",
+  "noticed": [
+    "\"Designed for ISO and FDA-regulated teams, the Unifize platform consolidates data, people, and processes\" - immediately reads as quality-team framing, makes me brace for a QMS pitch",
+    "\"No-Code Process Builder: Design workflows effortlessly with an intuitive, drag-and-drop builder requiring no technical expertise\" - this is the configure it myself part I actually care about, positive",
+    "\"Reminder & Escalation Workflows: Ensure timely task completion with automated reminders and escalations for overdue actions\" - sounds like it could stop my workflow from stalling between departments, positive",
+    "Testimonials: Wilson Lin (Quality & Regulatory Manager), Denis Machoka (Quality Assurance), Jesse Kolstad (Director of Quality), Clarissa Archer (Quality Assurance) - four for four quality titles, confirms my QMS-only worry",
+    "\"eSignatures (CFR Part 11 Compliant)\" and \"CFR Part 11 Compliant eSignatures\" showing up twice - FDA-quality specific language, nothing that names incidents or permits",
+    "the same investor boilerplate paragraph (system of record, system of collaboration, Techstars) repeated word for word under all seven feature groups - I stop reading it after the second time, feels like padding not information"
+  ],
+  "objections": [
+    "Every single testimonial is a quality title, Quality & Regulatory Manager, Quality Assurance, Director of Quality - is this a QMS-only product? I am not in quality",
+    "The page opens and keeps returning to ISO and FDA-regulated teams and CFR Part 11 eSignatures - does it handle my workflow types, or only CAPA and documents dressed up",
+    "Nothing on the page names incidents, permits, or corrective actions as workflow types, so I cannot confirm my two workflows would actually run in it"
+  ],
+  "positives": [
+    "No-Code Process Builder - matches configure it myself without IT",
+    "Configurable Checklists & Forms and Configurable Dashboards & Reports - suggests I would not be stuck with someone else's quality forms",
+    "Approval Workflows and Reminder & Escalation Workflows - reads like it could put an owner on the handoff instead of it dying in someone's inbox"
+  ],
+  "missing": [
+    "One example, testimonial, or feature line naming an EH&S-type workflow (incident, permit, corrective action outside quality) instead of only quality titles and CFR Part 11 language, would move this from a reservation-filled 2 to a compelled 3"
+  ],
+  "nextAction": "keep-reading",
+  "verbatims": [
+    "[synthetic] Every logo and quote on this page is quality department, so where does my incident workflow fit, or is this CAPA and documents wearing a different label",
+    "[synthetic] The no-code builder and the escalation workflows are exactly what I need, I just need someone to tell me this is not another quality-only tool before I book anything",
+    "[synthetic] I do not need perfect EH&S coverage, I need the handoffs to stop dying, but this page has not shown me that yet outside of the quality use cases"
+  ],
+  "confidence": "medium, because the feature list (no-code builder, approvals, escalation) plausibly fits my workflow, but the page never names incident or permit work directly and every testimonial is quality-titled, so I am inferring fit rather than seeing it confirmed",
+  "nextActionOriginal": "talk-to-sales",
+  "harnessNote": "nextAction downgraded from talk-to-sales to keep-reading by the harness after the verifier found it violated reactor rule 13 (no investigative-step justification) and contradicted the reaction verbatim \"before I book anything\"."
+}

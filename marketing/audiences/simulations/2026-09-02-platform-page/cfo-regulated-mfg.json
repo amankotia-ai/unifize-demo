@@ -1,0 +1,35 @@
+{
+  "personaId": "cfo-regulated-mfg",
+  "firstImpression": "The headline promises \"measurable outcomes\" so I keep reading for the measure, but by the time I hit the seven feature tabs there is no number anywhere, just \"The engine behind innovation and operational excellence.\"",
+  "comprehension": "This is a workflow and document-control tool for ISO and FDA manufacturers, configurable forms, chat-based process records, e-signatures, audit trails, dashboards. It would sit next to our ERP and Outlook as a quality and compliance layer, not something I would ever see reflected in the P&L on its own. Nothing on the page tells me what it costs today to not have this or what I would get back.",
+  "resonance": 1,
+  "resonanceReason": "This is anchor 1, indifferent. I understand roughly what it does but I do not see a job of mine named here, no cost, no P&L line, no payback. Per my own rule, a feature list is not a business case, and this page is seven feature lists (Configuration, Collaboration, Automation, Integrations, Analytics & Reports, Scalability, Security) stacked with repeated company boilerplate about Techstars funding. That is operator-level talk, not a number I can defend upward, so it is fine, not for me, rather than a 2 with a named job match.",
+  "noticed": [
+    "\"Built for robust collaboration, smarter processes, and measurable outcomes\" - the word measurable caught my eye, then nothing measures anything",
+    "The H1 \"The engine behind innovation and operational excellence\" over seven feature groups - reads as an engineering pitch, not a finance one",
+    "\"eSignatures (CFR Part 11 Compliant)\" and \"Real-Time Audit Trail\" - exactly the audit-readiness, handoff-speed feature talk that is not my problem to solve",
+    "Testimonial: \"about 30% faster now\" from a Quality & Regulatory Manager - the one number on the page, and I immediately want to know 30 percent faster to what, and worth how much",
+    "Three of the four testimonial cards carry the identical quote text under different names - that makes me doubt the 30 percent is real",
+    "No pricing, no calculator, no payback period anywhere on the page - just repeated Book a Demo buttons"
+  ],
+  "objections": [
+    "Feature list is not a business case: Configuration, Collaboration, Automation, Analytics, Scalability, Security are all capability lists with no cost or payback attached",
+    "Another SaaS subscription with no measured payback: every CTA is Book a Demo, none of them is send me the number",
+    "Credible proof, not fabricated KPIs: the 30% faster claim loses credibility when three of four testimonial cards repeat the same sentence word for word"
+  ],
+  "positives": [
+    "\"measurable outcomes\" in the headline at least gestures at something quantified, even though it is not delivered",
+    "\"about 30% faster\" in the first testimonial is the closest thing to a number on the page, something I could theoretically ask about",
+    "\"Cycle Time Tracking\" under Analytics & Reports is the one feature name adjacent to my vocabulary, cycle time, even though it is not expressed in dollars"
+  ],
+  "missing": [
+    "A dollar figure or payback period attached to that 30% cycle-time claim, from one credible, non-duplicated source, would give me a named job match while I would still object to the lack of a calculator or case study depth, which is exactly a 2"
+  ],
+  "nextAction": "bounce",
+  "verbatims": [
+    "[synthetic] Thirty percent faster to what, and worth how much.",
+    "[synthetic] This reads like a QMS feature brochure, not a business case.",
+    "[synthetic] Three of these four quotes are the same sentence, that is not proof, that is copy paste."
+  ],
+  "confidence": "medium, the persona file's vocabulary and objections map directly onto this page's feature-list structure and lack of dollar figures, but the exact threshold for what payback number would move them is not evidenced in the source material"
+}

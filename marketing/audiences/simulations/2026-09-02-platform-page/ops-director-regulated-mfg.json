@@ -1,0 +1,37 @@
+{
+  "personaId": "ops-director-regulated-mfg",
+  "firstImpression": "The hero pill says Collaboration, Visibility, Flexibility and the headline promises robust collaboration, smarter processes, and measurable outcomes, but nothing there names cycle time or handoffs, so at first glance this reads like a generic platform pitch, not something built for a plant like mine.",
+  "comprehension": "This is some kind of process and collaboration platform for regulated companies. It handles workflows, approvals, eSignatures, and dashboards on top of process records. It is not clearly an ERP or MES replacement, and it is not clearly a QMS either, it sits somewhere in between them and my inbox. I still cannot tell if it plugs into Outlook and Teams the way my team actually works, or if it wants us to run another tracker next to the ones we already own.",
+  "resonance": 2,
+  "resonanceReason": "Anchor 2: interested with reservations. The JTBD match is real: Configuration says workflows and dashboards are tailored with no-code tools, ensuring processes adapt to their unique needs, without reliance on IT, and Analytics and Reports names Cycle Time Tracking, measure and analyze the time taken for processes to identify inefficiencies and reduce delays. That lines up with my job to shrink cycle time on ECOs and see handoff speed, rework and cycle time on one dashboard, and it answers my objection that if it needs IT to configure it, it will not get configured. But the objections are also named on the page itself: Slack Integration is listed as a feature and Outlook and Teams are never mentioned, so I cannot tell if this fits our Microsoft stack without a rip-and-replace, and the page never says ERP, MES, or QMS anywhere, so I cannot place it against the systems we already run.",
+  "noticed": [
+    "\"Collaboration, Visibility, Flexibility\" hero pill: generic, does not name cycle time or handoff up front where I look first",
+    "\"...ensuring processes adapt to their unique needs—without reliance on IT\" under Configuration: this is the line that sounds written for me, not for Quality",
+    "\"Cycle Time Tracking: Measure and analyze the time taken for processes to identify inefficiencies and reduce delays\" under Analytics & Reports: the exact metric I look for first, but it is one line with no before-and-after numbers",
+    "\"Slack Integration: Stay informed with instant updates on tasks and approvals through Slack\" under Integrations: we are a Teams shop, this is a red flag",
+    "The founding boilerplate about Techstars and \"system of record with the system of collaboration\" repeated word for word under all seven feature groups: reads sloppy, makes me doubt this is a serious vendor next to my ERP and MES",
+    "Three of the four testimonial cards carry the identical quote, and the named roles are Quality & Regulatory Manager, Quality Assurance, and Director of Quality, not Operations: suggests the proven base is Quality, not my function"
+  ],
+  "objections": [
+    "Slack Integration is a named feature card and Outlook and Teams are never named anywhere on the page, only generic Email, so I cannot confirm it fits Outlook, Teams, SharePoint and Excel without a rip-and-replace",
+    "The page never says ERP, MES, or QMS, so it does not tell me where this sits against the systems my people already open every morning",
+    "Cycle Time Tracking is a single unsupported line with no before-and-after numbers or a real ECO example, so I have nothing concrete to forward to the COO yet",
+    "The identical boilerplate paragraph repeated seven times and three testimonials with the same quote text feel like an unpolished vendor, which raises the question of whether this becomes another tracker my team has to own instead of removing one"
+  ],
+  "positives": [
+    "\"...without reliance on IT\" plus No-Code Process Builder matches my requirement that this be configurable by ops, not by a project team",
+    "Cycle Time Tracking and Configurable Dashboards & Reports named as explicit features match my job to see cycle time, handoff and rework on one dashboard",
+    "SharePoint / OneDrive listed as an integration is at least a partial fit with our Microsoft stack",
+    "Reminder & Escalation Workflows uses escalation, which is my word for how overdue approvals actually get handled"
+  ],
+  "missing": [
+    "A real before-and-after cycle time number or screenshot tied to an actual ECO, with Outlook and Teams named explicitly and Slack not the headline integration, would let me stop investigating and actually forward the dashboard to the COO"
+  ],
+  "nextAction": "talk-to-sales",
+  "verbatims": [
+    "[synthetic] Cycle Time Tracking is buried five sections down as one line with no numbers, I need to see it move on a real ECO before this goes anywhere near the COO",
+    "[synthetic] Slack Integration is sitting right there in Integrations and Outlook or Teams is not named once, so I am not sure this was built for shops like mine",
+    "[synthetic] The without reliance on IT line under Configuration is the first thing on this page that sounds like it was written for me instead of for Quality"
+  ],
+  "confidence": "medium, the page's own words give direct hits and direct misses against my vocabulary (cycle time, escalation, dashboards match; Slack, no ERP or MES language miss), but whether I would actually book a demo to press on those gaps is inferred, not observed"
+}

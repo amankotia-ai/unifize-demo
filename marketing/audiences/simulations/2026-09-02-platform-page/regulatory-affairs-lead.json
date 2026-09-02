@@ -1,0 +1,36 @@
+{
+  "personaId": "regulatory-affairs-lead",
+  "firstImpression": "The hero pill \"Collaboration, Visibility, Flexibility\" and the headline \"Built for robust collaboration, smarter processes, and measurable outcomes\" read as generic software marketing before the sub-line even gets to \"Designed for ISO and FDA-regulated teams,\" so my first read is that this is another general ops tool that remembers to mention regulated industries only after the fact.",
+  "comprehension": "This is a coordination layer that sits on top of, or beside, our existing system of record. It puts chat, workflow automation, e-signatures, and an audit trail into process records, and per the repeated boilerplate it claims to connect \"the system of record with the system of collaboration.\" I do not see it positioned as replacing our eQMS or document control system outright, it looks like it wants to be where the discussion and the approval both happen, with the record living inside Unifize rather than in email or SharePoint threads.",
+  "resonance": 2,
+  "resonanceReason": "This is a 2: interested with reservations. The JTBD match is named and specific, Real-Time Audit Trail, Comprehensive Audit Trails, Revision Management / Version Control, and eSignatures (CFR Part 11 Compliant) speak directly to being audit-ready on demand, which is exactly the job I have. But the objections are also named and they block booking anything past a first look: every compliance label on this page, CFR Part 11 Compliant, SOC-2 Compliant Data Storage, is asserted with one line of marketing copy and nothing behind it, no audit trail export shown, no validation package mentioned, no word on computer system validation burden. And Chat Driven Process Records tells me discussions get \"centralized\" but does not show me that the chat becomes an immutable, time-stamped part of the controlled record rather than just another unrecorded conversation in a new location.",
+  "noticed": [
+    "\"eSignatures (CFR Part 11 Compliant)\" under Collaboration, and \"CFR Part 11 Compliant eSignatures\" repeated under Security, positive that it is core enough to appear twice, but it is a label with no substantiation attached.",
+    "\"Real-Time Audit Trail: Maintain full traceability with a live, always-accessible record of actions.\", positive, this is the exact JTBD I came to check.",
+    "\"Chat Driven Process Records: Centralize discussions and decisions within process records for better collaboration.\", mixed, it gestures at fixing the pain of decisions living in email and meetings, but does not say the chat itself becomes evidence tied to the record.",
+    "Three of the four testimonial cards, Denis Machoka, Jesse Kolstad, and Clarissa Archer, carry the identical quote word for word, negative, three different named people cannot have said the same sentence, that reads as a template, not proof.",
+    "The same company boilerplate paragraph repeats under all seven feature groups, including \"Backed by leading, Tier 1 institutional investors, including Techstars ($850m AUM)\" followed immediately by a near-duplicate paragraph with \"$850M AUM\", negative, inconsistent capitalization on a repeated claim reads as unproofed filler, not the rigor I am evaluating the vendor on.",
+    "\"SOC-2 Compliant Data Storage\" and \"Enterprise-Grade Encryption\", neutral to positive on vocabulary, but no detail on who can change the data or how access is controlled."
+  ],
+  "objections": [
+    "Is this validated, and what is my computer system validation burden. Every compliant badge on this page, CFR Part 11, SOC-2, is a claim with no audit trail export, no validation documentation, and no CSV mention anywhere on the page.",
+    "Chat as the place decisions happen sounds like more unrecorded conversation, not less, unless it becomes evidence on the record. Chat Driven Process Records says discussions are centralized but does not show the record is immutable or tied to the controlled document.",
+    "Data integrity, where does the data live and who can change it. SOC-2 Compliant Data Storage and Enterprise-Grade Encryption are named but nothing addresses access control or immutability of the audit trail itself.",
+    "Compliance or proof claims with nothing verifiable behind them. Three testimonial cards sharing one identical quote undermines confidence in the other unverified claims on the same page, including the compliance labels."
+  ],
+  "positives": [
+    "\"Real-Time Audit Trail\" and \"Comprehensive Audit Trails\" name the exact traceability job I have, in my own vocabulary.",
+    "\"Revision Management / Version Control: Maintain a complete history of changes with detailed version control for all records and documents.\" matches controlled document and revision language directly.",
+    "CFR Part 11 Compliant eSignatures appearing in two separate feature groups, Collaboration and Security, signals it is treated as core rather than a checkbox added late."
+  ],
+  "missing": [
+    "One concrete proof point, an actual audit trail export screenshot, a line on Part 11 validation documentation or CSV support, or a sentence explicitly stating that a chat message becomes a timestamped, immutable entry in the controlled record, would move this from a page of unverified labels to something I would forward to my VP before a demo."
+  ],
+  "nextAction": "talk-to-sales",
+  "verbatims": [
+    "[synthetic] CFR Part 11 Compliant is a label until I see the audit trail export.",
+    "[synthetic] If discussions get centralized in the process record, show me that record is immutable and time-stamped before I call this evidence.",
+    "[synthetic] Three testimonials with the exact same sentence is not evidence, that is a template."
+  ],
+  "confidence": "medium, this is the exact live platform page the persona's own sources point to, but the profile's pains and objections were derived from adjacent conversations about audit readiness rather than a direct read of this rendering, so my reaction extrapolates their stated evaluation habits onto page elements they were not observed reacting to."
+}

@@ -4,14 +4,40 @@
     {
       "name": "dev",
       "runtimeExecutable": "/Users/abhishekmankotia/.nvm/versions/node/v25.7.0/bin/node",
-      "runtimeArgs": ["node_modules/.bin/vite", "--port", "5180", "--strictPort"],
+      "runtimeArgs": [
+        "node_modules/.bin/vite",
+        "--port",
+        "5180",
+        "--strictPort"
+      ],
       "port": 5180
     },
     {
       "name": "storybook",
       "runtimeExecutable": "/Users/abhishekmankotia/.nvm/versions/node/v25.7.0/bin/node",
-      "runtimeArgs": ["node_modules/.bin/storybook", "dev", "--no-open", "-p", "6007"],
+      "runtimeArgs": [
+        "node_modules/.bin/storybook",
+        "dev",
+        "--no-open",
+        "-p",
+        "6007"
+      ],
       "port": 6007
+    },
+    {
+      "name": "monorepo-next-3001",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "/Users/abhishekmankotia/Downloads/Unifize Monorepo 2",
+        "--",
+        "-p",
+        "3001"
+      ],
+      "port": 3001,
+      "autoPort": false
     }
   ]
 }
